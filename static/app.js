@@ -191,7 +191,7 @@ function renderJobBanner(kind, text) {
   if (kind === "wait") {
     el.innerHTML = `<div class="banner info"><b>Queued on GitHub Actions</b> —
       ${esc(pendingJob ? pendingJob.label : "job")}. This page refreshes itself when the
-      run finishes (usually 2–5 minutes).${watch}${actions}</div>`;
+      run finishes (about a minute).${watch}${actions}</div>`;
   } else if (kind === "timeout") {
     el.innerHTML = `<div class="banner warn"><b>Still waiting.</b> The job has not reported
       back after 20 minutes — open ${watch || "the Actions tab"} and check the run.${actions}</div>`;

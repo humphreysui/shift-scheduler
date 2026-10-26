@@ -104,8 +104,9 @@ Because a static site has no server, every edit becomes a queued job:
 3. The `Run queued job` Action executes it through the real `app.py` endpoints,
    commits `data/project.json`, comments the result on the issue and closes it,
    then republishes the site.
-4. The page polls `data/last_result.json` and refreshes itself — typically 2–5
-   minutes per edit (queue position matters: jobs run one at a time).
+4. The page polls `data/last_result.json` and refreshes itself — a full
+   issue → run → deploy cycle measured **42 s** (jobs run one at a time, so a
+   second edit queues behind the first).
 
 Reads (`data/state.json`, the CSV export) come straight from the published
 artifact, so browsing is instant. Only writes are queued. History diff

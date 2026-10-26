@@ -1,0 +1,100 @@
+name: Run queued job
+
+# The hosted app (GitHub Pages) has no server: every edit is written into a
+# GitHub issue, this workflow runs it through the real app.py endpoints,
+# commits data/project.json + data/last_result.json, and republishes the site.
+#
+# Auth = GitHub's own author association (no secret sits in a public issue body).
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: queued-job
+  cancel-in-progress: false   # queue edits, never race on data/project.json
+
+jobs:
+  run:
+    if: >-
+      startsWith(github.event.issue.title, '[job]') &&
+      contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Run the queued job
+        id: job
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+        run: >-
+          python scripts/run_job.py --body-env ISSUE_BODY
+          --out data/last_result.json --comment build/job-comment.md
+
+      - name: Commit the new state
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/
+          if ! git diff --cached --quiet; then
+            git commit -m "job: ${{ steps.job.outputs.op }} via issue #${{ github.event.issue.number }}"
+          fi
+          # you may be editing locally at the same time — rebase, never force
+          for i in 1 2 3; do
+            git pull --rebase origin main && git push origin HEAD:main && break
+            sleep 5
+          done
+
+      - name: Report on the issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue comment ${{ github.event.issue.number }} --body-file build/job-comment.md
+          gh issue close ${{ github.event.issue.number }} --comment "Finished — see the comment above."
+
+      - name: Build the site
+        run: python scripts/export_state.py --site build/site
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/site
+
+      - name: Deploy to Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Fail the run if the job did not apply
+        if: steps.job.outputs.ok != 'true'
+        run: exit 1
+
+  reject:
+    # an issue that looks like a job but was not opened by the owner/collaborators
+    if: >-
+      startsWith(github.event.issue.title, '[job]') &&
+      !contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association)
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Close it
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >-
+          gh issue close ${{ github.event.issue.number }}
+          --comment "Only the repository owner can queue schedule jobs."

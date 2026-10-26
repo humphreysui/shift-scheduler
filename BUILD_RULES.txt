@@ -1,0 +1,249 @@
+================================================================================
+SHIFT SCHEDULER — SCHEDULE GENERATION RULES (plain-text reference)
+Source of truth: models.py (constants), scheduler.py (CP-SAT solver),
+                 rules.py (independent checker)   App: v1.2 "rest rule (hard)"
+Cycle: 28 days | Solver: Google OR-Tools CP-SAT, 8 workers, 180 s limit
+================================================================================
+
+A. MODEL / INPUTS
+--------------------------------------------------------------------------------
+- Cycle: 28 days (4 x 7), default start = Monday.
+- Staff: 7-9 active. Hard minimum 7 (comment in models.py: 6 people x 5 days
+  = 30 < 31 person-days needed per week).
+- Each person: skill weight 1..3 (3 = highest), and a FIXED off-pair =
+  two consecutive weekday indices (start, start+1 mod 7) = mandatory rest
+  days (anchors), e.g. Sat+Sun.
+- Per person-day values (exactly one): Off, S1 (office 08:00-17:00),
+  S2 (evening 14:00-23:00), S3 (night 23:00-08:00+1), S4 (support 07:00-16:00).
+- Day types: Sat+Sun = "light"; weekdays = "workday"; extra configured
+  holidays can be marked light.
+- Cross-cycle inputs: ledger debts per person (night/eve/comp/s4/off,
+  in hundredths), yesterday's state (day-0 shift per person) + derived tail
+  streak counters, optional locked day-1 values, priority mode
+  (floor_first = default | nights_first).
+
+B. HARD RULES — solver constraints (schedule invalid if violated)
+   [relaxation level in brackets; "never" = not relaxable at any level]
+--------------------------------------------------------------------------------
+H1  Exactly one value (Off/S1/S2/S3/S4) per person per day.              [never]
+H2  Per-day coverage by day type (COVERAGE table in models.py):
+      workday: morning crew (S1+S4) count 3..4, S2 count 1..2, S3 count 1..2
+      light:   morning crew count 1..3,      S2 count 1..2, S3 count 1..2
+    - Morning MINIMUM is COUNT-based: workday >= 3 (lowered to >= 2 only at
+      level >= 4); light-day >= 1 never lowered.
+    - S2 minimum >= 1 and S3 minimum >= 1: NEVER relaxed at any level.
+    - S2/S3 maxima 2, raised to 3 at level >= 3.
+    - Morning maximum (4 workday / 3 light): never relaxed.
+H3  At most 1 S4 per day.                                                [never]
+H4  Every workday has >= 1 S1 (office person).                           [never]
+H5  Post-night transition: after S3, next day must be Off or S3
+    (also applied from day-0 input into day 1, across cycles).           [never]
+H6  Evening rest rule: after S2, next day may NOT be S1/S4 (~9 h rest).  [L6]
+H7  Work streak: <= 5 consecutive workdays (rolling window, includes
+    tail streak carried from the previous cycle).                    [L2: 6]
+H8  Night streak: <= 3 consecutive S3 (same tail carryover).         [L2: 4]
+H9  Off-day anchors: person must be Off on their fixed pair days.
+    Exception: a user-locked non-Off day-1 value overrides the anchor.
+                                                                          [L5]
+H10 Rotation: within the cycle each person works >= 1 S1, >= 1 S2, >= 1 S3.
+                                                                       [L1]
+H11 Day-1 locks: user-entered day-1 values must match exactly.        [never]
+H12 Repair freeze: all days BEFORE the edited day hard-frozen to the
+    current schedule; the edited cell itself forced to the chosen value.
+                                                                        [never]
+H13 Morning WEIGHT floor (separate from H2's count): sum of morning-crew
+    skill weights on a workday should be >= 7 (target 9). Implemented as
+    a soft big-M indicator (M_BELOW = 12) costing 1,000,000 per below-floor
+    workday — near-hard in practice, reported as a warning flag.
+
+C. SOFT RULES — OBJECTIVE (single weighted sum, MINIMIZED; negative = reward;
+   tiers below follow the header docstring of scheduler.py; large gaps between
+   tiers make it behave near-lexicographically)
+--------------------------------------------------------------------------------
+ 1  Below-floor morning weight per workday ............. +1,000,000 each
+    (priority mode "nights_first" swaps this to ......... +5,000 each)
+ 2  Extra (4th) morning person beyond 3 ................. +2,000 each
+    (term exists only where morning_max > 3, i.e. workdays)
+ 3  Compensatory rest: non-anchor Off directly after a run of >= 2 nights:
+      after a run of >= 3 nights ............................ -2,500
+      after exactly 2 nights ................................ -800
+ 4  Weekday morning weight toward target 9 .............. -200 x min(w, 9)
+    (max effect 600 per day)
+ 5  Post-night return day (first workday after S3 + Off):
+      taken as S2 .......................................... -300
+      taken as S1 or S4 .................................. +800 each
+ 6  Night (S3) coverage: per assignment .................. -1,000
+ 7  Evening (S2) coverage: per assignment ................... -150
+ 8  Night fairness: cum = 100 x cycle nights + ledger debt (hundredths);
+    +50 x (max - min) + 25 x sum |cum - common target|
+    (nights_first mode: spread weight .................... +5,000)
+ 9  Cumulative fairness ledgers (same formula per person, same 100 x count
+    + debt basis) — priorities by weight:
+      off-day total (anchors + comps + extras): +80 spread +40 abs  <- TOP
+      comp days:                                +50 spread +20 abs
+      S4 count:                                  +8 spread  +6 abs
+10  S4 support shift:
+      per staffed day (presence bonus) ................. -1,500
+      per assignment: -(300 + 100 x (3 - weight))
+        -> weight 3 = -300, weight 2 = -400, weight 1 = -500 (tilt light)
+11  Evening fairness: +50 spread +25 abs (cum = 100 x cycle S2 + eve debt)
+12  Repair change penalties (from the edited day onward):
+      changed cell of another person ................... +50,000
+      changed cell of the edited person ............... +500
+13  Boundary lookahead: last cycle day carries S2/S3 for a person who does
+    NOT rest on the next cycle's first weekday .......... +1,200 each
+    (keeps the next cycle's first morning staffable)
+Additional terms not in the docstring tiers:
+    work-days count spread: ............................ +100 x (max - min)
+    anchor softening at level >= 5: worked anchor day . +200,000 each
+
+D. RELAXATION LADDER (levels tried in order 0 -> 6; first level with any
+   solution wins; the applied relaxations are returned and shown to the user;
+   the independent checker re-validation honors the level)
+--------------------------------------------------------------------------------
+L0  none (full spec)
+L1  rotation guarantee relaxed (someone misses S1/S2/S3 this cycle)
+L2  consecutive-day limits relaxed (work 5->6, nights 3->4)
+L3  coverage caps relaxed (S2/S3 max 2->3)
+L4  morning minimum lowered (workday crew 3->2 — flagged day)
+L5  off-day anchors relaxed (worked anchor day, soft +200,000 — flagged)
+L6  evening rest relaxed (S1/S4 right after an S2 allowed — flagged)
+Everything in section B marked [never] stays hard even at L6.
+
+E. CROSS-CYCLE LEDGER (carryover between cycles)
+--------------------------------------------------------------------------------
+Per person and category (night, eve, comp, s4, off): persisted debt =
+ledger debt + 100 x cumulative count (hundredths), updated every cycle and
+fed into the fairness terms (section C.8/9/11). Balancing uses BOTH spread
+and distance-to-common-target, so deficits are repaid later and overshoot
+is never rewarded. Comp days and off days carry over perpetually.
+Off-day equality is the top fairness priority; evening fairness ranks below it.
+Tested bounds (ledger suite, 2 chained cycles): night spread <= 1,
+comp spread <= 1.5, S4 spread <= 1, off spread <= 1, eve spread <= 2.
+Observed after 2 cycles: night 0.00, comp 0.00, s4 1.00, off 0.00, eve 0.00.
+
+F. REPAIR MODE (sick leave / manual cell edit)
+--------------------------------------------------------------------------------
+- Days BEFORE the edited day: hard-frozen to the current schedule.
+- The edited cell: forced to the chosen value.
+- The edited day itself: open to everyone else, so required coverage can
+  move onto it ("someone must take the sick person's night" — spec item 7),
+  with tier-12 penalties minimizing collateral changes.
+- Rationale: freezing THROUGH the edit day made any single-night day
+  infeasible at every level, because H2's s3_min = 1 is never relaxed.
+
+G. INDEPENDENT VERIFIER (rules.py — no solver dependency; tests + UI flags)
+--------------------------------------------------------------------------------
+error codes: COVER_MORNING, COVER_MORNING_MAX, COVER_S2, CAP_S2, COVER_S3,
+CAP_S3, CAP_S4, OFFICE, TRANSITION, REST_EVE, WORK_STREAK, NIGHT_STREAK,
+ANCHOR, ROTATION, DAY1_LOCK
+warning code: WEIGHT_BELOW_7 (morning weight < 7 on a workday)
+Only severity "error" fails tests.
+
+H. ACCEPTANCE BASELINE (tests.py — 179 checks, all passing)
+--------------------------------------------------------------------------------
+- 7 staff single cycle: solves at L0 with NO relaxations; S4 on 28/28 days;
+  <= 1 below-floor weekday; comp spread <= 1; 0 return-rule slips;
+  0 evening-rest slips; S4 count within 1 of max for >= 5 of 7 people.
+- 9 staff: 9 comp days (spread 0), S4 28/28, S4 spread <= 1.
+- Proven trade under shipped weights: synthetic optimum has night spread 3
+  (evening/off fairness buys equality at the cost of one night; the ledger
+  repays night debt in later cycles). Night spread test bound = <= 3.
+- Chained cycle 2 at 7 staff reaches L2 (rotation + consecutive) — genuine
+  structural pressure at 7 staff even with long solve times; single cycles
+  stay at L0.
+- Boundary lookahead test: next cycle's day 1 keeps the 3-person morning
+  minimum, at most 2 people arrive day-1 restricted, no below-floor weekday.
+- CP-SAT is nondeterministic (8 workers): keep the 180 s limit — 45 s gives
+  run-to-run varying incumbents, 180 s is stable, 600 s returned a proven
+  (OPTIMAL) result identical to the 180 s one.
+
+UI / COLOUR (static/style.css)
+--------------------------------------------------------------------------------
+- ALL colour lives in the :root token block of static/style.css. app.js and
+  index.html contain no colours - keep it that way (no inline styles, no hex).
+- Colour = shift, not time of day: S1 blue (#3562c4), S4 pale blue (#cddff7),
+  S2 orange (#e39327), S3 rose (#c7436b). Each has a matching *-ink token for
+  text on the fill (all four pass WCAG AA >= 4.5:1).
+- Rule: shifts are a SOLID fill; Off is a textured neutral (--off-bg, weekend
+  --off-bg-wknd, faint 45 degree hairlines) and is NEVER a solid fill; comp
+  rest keeps the green hatch. Off must stay visually separate from pale S4 -
+  texture + a warm grey hue does that.
+- td.cell.changed (edited cell) = white + ink double ring, NOT var(--warn):
+  a red outline vanishes on the rose S3 fill.
+- Small consistency tokens: --s4-edge (S4 accent on light panels, since pale
+  blue alone is too faint), --wknd-tint (weekend column header / weight row),
+  --ring (hover/focus, neutral dark so it reads on every fill).
+
+HOSTED MODE (GitHub Pages + Actions — same code, no server)
+ --------------------------------------------------------------------------------
+ - One codebase runs twice: `python app.py` locally (direct /api/*), and as a
+   static site on https://humphreysui.github.io/shift-scheduler/ where the same
+   app.js reads files and queues writes. Do NOT fork the UI: static/index.html
+   and static/app.js must keep working in both modes.
+ - Detection: app.js `detectStatic()` GETs `api/state` RELATIVELY. The FastAPI
+   server answers JSON (local mode); a static host 404s -> static mode. Every
+   asset path in index.html is therefore relative (no leading slash).
+ - Static reads (produced by scripts/export_state.py into the Pages artifact):
+     data/state.json        == GET /api/state
+     data/schedule.csv      == GET /api/export.csv (Export CSV re-points here)
+     data/last_result.json  outcome of the last queued job (polling target)
+     data/project.json      raw store copy (reference only — never edit by hand)
+   Any other GET under api/ throws "Read-only view: ...".
+ - Static writes: api() POSTs -> queueJob() builds
+     {"v":1,"op":"<op>","jid":"<id>","payload":{...}}
+   and opens github.com/<repo>/issues/new?title=[job] <label>&body=```json …```
+   (repo = static/config.json). The page then polls data/last_result.json every
+   10 s (20 min TTL, resumed from localStorage after a reload).
+ - Supported ops (scripts/run_job.py OPS — keep in sync with app.py endpoints):
+   repair, generate, restore, resources, settings, startstate. The compare /
+   history-diff buttons are HIDDEN when STATIC (no Python _diff in the browser).
+ - .github/workflows/schedule-job.yml: issues opened -> auth gate
+   (title starts with "[job]" AND author_association in OWNER/MEMBER/COLLABORATOR)
+   -> run_job.py through the real app.py functions -> commit data/ (rebase, never
+   force) -> comment + close the issue -> build + deploy Pages -> `exit 1` if the
+   job did not apply. concurrency `queued-job` (cancel-in-progress: false) means
+   edits queue instead of racing on data/project.json.
+ - run_job.py ALWAYS exits 0 and always writes data/last_result.json + the issue
+   comment; the workflow turns the run red at the very end, so a failure reaches
+   both the issue and the hosted page. Never let a Python traceback skip the
+   commit — that is how the hosted page would silently keep stale data.
+ - .github/workflows/pages.yml: push to main touching static/, data/, scripts/,
+   requirements.txt -> python scripts/export_state.py --site build/site ->
+   actions/deploy-pages. The same command builds the site locally, so
+   `python -m http.server 8080 -d build/site` exercises the hosted code path.
+ - CI pins Python 3.12 (local is 3.14); requirements.txt must stay installable
+   on both.
+
+NETWORK / AUTH PRAGMATICS (this machine)
+ --------------------------------------------------------------------------------
+ - github.com:443 is intermittently unreachable here; api.github.com and
+   ssh.github.com:443 are not. So origin = git@github-shift:humphreysui/...
+   and ~/.ssh/config has a `github-shift` Host block (HostName ssh.github.com,
+   Port 443, IdentityFile ~/.ssh/shift_scheduler_deploy) pointing at a READ-WRITE
+   DEPLOY KEY on this repo. Plain `git push` works through it.
+ - The deploy key (and any token without the `workflow` scope) CANNOT create or
+   update .github/workflows/*: push refuses with "... OAuth App ... without
+   `workflow` scope", and the Contents API answers 404. Workflow files are pushed
+   with the gh OAuth token (which carries `workflow`) via
+   `gh api -X PUT repos/<repo>/contents/.github/workflows/<file> -f content=<b64>`.
+   Granting that scope is a one-time device flow at github.com/login/device.
+ - scripts/push_via_api.py is the fallback that builds the commit through the
+   Git Data API (api.github.com) when no transport works at all. Repeated runs
+   compare content, not shas; reconcile with `git fetch && git reset --hard origin/main`.
+ - data/project.json is the live roster. It is git-tracked AND published, but it
+   must never be edited without the user's consent — hosted edits go through a
+   [job] issue, local edits through the UI.
+
+TRAPS FOR REVIEWERS / OTHER AI TOOLS
+--------------------------------------------------------------------------------
+- The morning MINIMUM is a COUNT (>= 3 people, hard); the morning WEIGHT
+  FLOOR is a soft 1,000,000 penalty (H13). Do not conflate them.
+- s2_min and s3_min are >= 1 at EVERY relaxation level — the single most
+  common source of "impossible repair" bugs (see section F).
+- "Hard at L6" vs "never": H1/H2/H3/H4/H5/H11/H12 are never relaxed; H6
+  relaxes only at the top level L6; H7/H8 only gain +1 at L2 (never fully
+  dropped); H9 becomes soft at L5 (200,000 penalty); H10 drops at L1.
+- The objective is ONE weighted sum — "tier" is intent, not a separate pass.
+  Trade-offs inside a tier are real; big gaps mostly order the tiers.
+================================================================================

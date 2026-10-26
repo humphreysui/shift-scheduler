@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#ecefe9">
+<title>Shift Scheduler</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Saira:wght@400;500;600;700&family=Saira+Semi+Condensed:wght@500;600;700&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div class="head-left">
+    <div>
+      <h1><span class="mark" aria-hidden="true"></span>Shift Scheduler</h1>
+      <div id="cycle-info" class="muted">…</div>
+    </div>
+  </div>
+  <nav id="tabs">
+    <button data-tab="schedule" class="active">Schedule</button>
+    <button data-tab="day">Day view</button>
+    <button data-tab="people">People</button>
+    <button data-tab="setup">Setup</button>
+    <button data-tab="history">History</button>
+  </nav>
+</header>
+
+<main>
+  <div id="job-status" class="hidden"></div>
+
+  <section id="tab-schedule">
+    <div class="toolbar">
+      <span class="legend">
+        <span class="chip s1">S1 08–17</span>
+        <span class="chip s2">S2 14–23</span>
+        <span class="chip s3">S3 23–08</span>
+        <span class="chip s4">S4 07–16</span>
+        <span class="chip off">Off</span>
+        <span class="chip comp">C rest after nights</span>
+      </span>
+      <span class="hint">Click any cell to edit — set Off for sick leave.</span>
+      <span class="spacer"></span>
+      <a class="btn link" id="export-csv" href="api/export.csv">Export CSV</a>
+    </div>
+    <div id="diff-panel" class="panel hidden"></div>
+    <div id="grid-container" class="scroll-x"></div>
+  </section>
+
+  <section id="tab-day" class="hidden">
+    <div class="toolbar">
+      <div class="stepper">
+        <button id="day-prev" type="button" title="Previous day">‹</button>
+        <select id="day-select"></select>
+        <button id="day-next" type="button" title="Next day">›</button>
+      </div>
+      <span class="hint">How each role is staffed on one day of the cycle.</span>
+    </div>
+    <div id="day-view"></div>
+  </section>
+
+  <section id="tab-people" class="hidden">
+    <div id="people-view"></div>
+  </section>
+
+  <section id="tab-setup" class="hidden">
+    <div class="panel">
+      <h2>Settings</h2>
+      <div class="form-row">
+        <label>Cycle start (Monday recommended)
+          <input type="date" id="cycle-start">
+        </label>
+        <label>When rules conflict (7 staff): priority
+          <select id="priority">
+            <option value="floor_first">Morning weight floor first</option>
+            <option value="nights_first">Night equality first</option>
+          </select>
+        </label>
+        <label>Light days / holidays (comma-separated ISO dates)
+          <input type="text" id="light-days" placeholder="2026-12-25, 2027-01-01">
+        </label>
+        <button class="btn" id="save-settings">Save settings</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Resources <span class="muted" id="res-count"></span></h2>
+      <div id="resources-editor"></div>
+      <button class="btn small" id="add-resource">+ Add resource</button>
+      <button class="btn small primary" id="save-resources">Save resources</button>
+    </div>
+
+    <div class="panel">
+      <h2>Starting day situation</h2>
+      <p class="muted">Day 0 = the day before the cycle starts (context for rest/rotation rules;
+        “Auto” uses the previous schedule’s last day). Day 1 = the first day of the new cycle —
+        set it to lock specific assignments.</p>
+      <div class="start-tables">
+        <div>
+          <h3>Day 0 (yesterday)</h3>
+          <div id="day0-editor"></div>
+        </div>
+        <div>
+          <h3>Day 1 (first day)</h3>
+          <div id="day1-editor"></div>
+        </div>
+      </div>
+      <button class="btn small" id="save-startstate">Save starting state</button>
+    </div>
+
+    <div class="panel">
+      <h2>Generate</h2>
+      <button class="btn primary big" id="generate">Generate 4-week schedule</button>
+      <div id="gen-status" class="muted" style="margin-top:.6rem"></div>
+    </div>
+  </section>
+
+  <section id="tab-history" class="hidden">
+    <div id="versions-view"></div>
+  </section>
+</main>
+
+<div id="modal-root"></div>
+<script src="app.js"></script>
+</body>
+</html>

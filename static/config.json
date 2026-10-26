@@ -1,0 +1,4 @@
+{
+  "repo": "humphreysui/shift-scheduler",
+  "note": "GitHub repo used to queue edits when the app runs as a static site (GitHub Pages). Ignored by the local server."
+}

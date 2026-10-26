@@ -1,0 +1,57 @@
+name: Publish site
+
+# Rebuilds the static app (GitHub Pages) whenever the UI or the data changes.
+# The same build command runs locally:  python scripts/export_state.py --site build/site
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "static/**"
+      - "data/**"
+      - "scripts/**"
+      - "requirements.txt"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: site-publish
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Build the site
+        run: python scripts/export_state.py --site build/site
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

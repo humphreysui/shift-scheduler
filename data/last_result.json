@@ -1,0 +1,7 @@
+{
+ "ok": false,
+ "op": "unknown",
+ "jid": "unknown",
+ "detail": "could not read the job: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)",
+ "at": "2026-10-26T10:59:59+00:00"
+}

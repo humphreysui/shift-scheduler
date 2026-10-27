@@ -54,8 +54,17 @@ python tests.py
   (07:00–08:00 starts → only 8–9h rest) — a hard rule; bent only as the very last
   resort and the affected day is flagged.
 - **Compensatory rest**: an extra rest day right after a run of ≥2 nights (a 3-night
-  run is strongly preferred). Comp days are counted per person, shown as **C** in the
+  run is strongly preferred).  Comp days are counted per person, shown as **C** in the
   grid, and equalized across cycles with their own debt ledger entry.
+
+  **Extra rest after a 3-night run whose recovery IS the regular days off**: if a
+  ≥3‑night run ends on the resource's fixed pair, the solver places the pair as the
+  recovery slot (no weekday off is lost), and the app now rewards/pays for one extra
+  non‑anchor Off day directly after the pair (the first weekday off in the 2–3 days
+  following the run).  This is a soft incentive — the solver always prefers it when
+  coverage allows, and a warning flag appears in the UI when coverage won't permit it.
+  The extra day is tracked in the comp debt ledger just like any other compensatory
+  rest day, so it carries over and is repaid across cycles exactly like any other comp day.
 - **Support shift (S4)**: staffed every day (07:00 handover takes over so the night
   person can leave on time), tilted toward lower availability weights, spread equally across
   the team and tracked in the debt ledger.

@@ -98,6 +98,26 @@ def verify(assign, resources, days, day_types, day0=None, day1_overrides=None,
                     if seq[d] != OFF:
                         add("ANCHOR", f"Works on mandatory off day ({WEEKDAY_NAMES[wd]})", d, r.id)
 
+        # Policy (soft, so a warning and never an error): a 3-night run that
+        # ends on the resource's regular days off must still buy ONE extra rest
+        # day after the pair. The recovery day is already their anchor, so
+        # without this check nothing would ever tell the user it was skipped.
+        for d in range(3, D):
+            if seq[d] != OFF or days[d].weekday() not in r.off_days:
+                continue
+            if not all(seq[i] == "S3" for i in (d - 1, d - 2, d - 3)):
+                continue
+            d1 = next((k for k in range(d + 1, min(d + 4, D))
+                       if days[k].weekday() not in r.off_days), None)
+            if d1 is None:
+                continue                       # extra day falls in the next cycle
+            if seq[d1] != OFF:
+                add("COMP3_NO_EXTRA_REST",
+                    f"3-night run ends on the regular days off, but "
+                    f"{WEEKDAY_NAMES[days[d1].weekday()]} is a {seq[d1]} day "
+                    f"— no extra rest day after the pair", d1, r.id,
+                    severity="warning")
+
         if relax_level < 1:
             for s in ("S1", "S2", "S3"):
                 if s not in seq:
@@ -137,6 +157,19 @@ def compute_stats(assign, resources, days, day_types) -> dict:
                 i -= 1
             if k >= COMP_AFTER:
                 comp.append(d)
+        # 3-night run whose recovery day IS a regular off day: the comp day is
+        # the first non-anchor day after the pair (mirrors the solver's
+        # W_COMP3_ANCHOR term — without this the credit would vanish).
+        for d in range(3, D):
+            if seq[d] != OFF or days[d].weekday() not in r.off_days:
+                continue
+            if not all(seq[i] == "S3" for i in (d - 1, d - 2, d - 3)):
+                continue
+            d1 = next((k for k in range(d + 1, min(d + 4, D))
+                       if days[k].weekday() not in r.off_days), None)
+            if d1 is not None and seq[d1] == OFF:
+                comp.append(d1)
+        comp.sort()                      # chronological, matches the solver view
         run = best = 0
         for d in range(D):
             run = run + 1 if seq[d] == "S3" else 0

@@ -37,6 +37,10 @@ W_BELOW_FLOOR = 1_000_000
 W_EXTRA_MORNING = 2_000
 W_COMP3 = 2_500        # extra rest day right after a 3-night run
 W_COMP2 = 800          # extra rest day after a 2-night run
+W_COMP3_ANCHOR = 2_500  # 3-night run whose recovery IS the regular pair: pay for
+                        # the extra day AFTER the pair (same benefit as W_COMP3 -
+                        # without it the -W_COMP3 term is unreachable on anchor
+                        # days and the solver designs runs around it instead)
 W_S3_COVERAGE = 1_000
 W_TOWARD_TARGET = 200
 W_RETURN_S2 = 300      # first workday after night recovery: prefer S2 (wfh)
@@ -400,6 +404,24 @@ def _solve_once(p: SolveParams, relax: int):
                 c2 = _and(model, base, f"c2_{r.id}_{d}")
                 terms.append(-W_COMP2 * c2)
                 comp_exprs[r.id].append(c2)
+
+    # ---- anchor-aligned recovery: the rest right after a 3-night run IS the
+    # resource's fixed pair, so the -W_COMP3 reward above is unreachable and the
+    # solver simply ends runs in front of the pair (the live Nov 1-28 roster has
+    # 5 such runs and 0 comp days). Pay for the EXTRA day after the pair instead
+    # and count it in the comp ledger, exactly like a non-anchor comp day.
+    for r in R:
+        for d in range(3, D):
+            if days[d].weekday() not in r.off_days:
+                continue                      # recovery day must be a regular off day
+            d1 = next((k for k in range(d + 1, min(d + 4, D))
+                       if days[k].weekday() not in r.off_days), None)
+            if d1 is None:
+                continue                      # extra day would fall in the next cycle
+            e = _and(model, [off[r.id, d], x[r.id, d - 1, "S3"], x[r.id, d - 2, "S3"],
+                             x[r.id, d - 3, "S3"], off[r.id, d1]], f"c3a_{r.id}_{d}")
+            terms.append(-W_COMP3_ANCHOR * e)
+            comp_exprs[r.id].append(e)
 
     ccum = []
     for r in R:

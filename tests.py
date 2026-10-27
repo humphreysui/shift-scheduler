@@ -10,8 +10,8 @@ import tempfile
 from datetime import date, timedelta
 from pathlib import Path
 
-from models import OFF, Resource
-from rules import streaks_from_tail, verify
+from models import OFF, Resource, day_type
+from rules import compute_stats, streaks_from_tail, verify
 from scheduler import SolveParams, generate
 from store import Store
 
@@ -56,12 +56,18 @@ def full_verify(out, resources, **kw):
 
 
 def rebuild_comp_days(out, res):
-    """Independent rebuild of comp days: extra Off (non-anchor) right after a >=2 night run."""
+    """Independent rebuild of comp days:
+       - extra Off (non-anchor) directly after a >= 2 night run, and
+       - for a 3-night run whose recovery day IS an anchor day, the first
+         non-anchor day after the pair (the "extra day beyond the pair").
+    Mirrors rules.compute_stats on purpose: the two are compared for equality.
+    """
     got = {}
+    D = len(out.days)
     for r in res:
         seq = out.assign[r.id]
         days_found = []
-        for d in range(2, 28):
+        for d in range(2, D):
             if seq[d] != OFF or out.days[d].weekday() in r.off_days:
                 continue
             k, i = 0, d - 1
@@ -70,7 +76,16 @@ def rebuild_comp_days(out, res):
                 i -= 1
             if k >= 2:
                 days_found.append(d)
-        got[r.id] = days_found
+        for d in range(3, D):
+            if seq[d] != OFF or out.days[d].weekday() not in r.off_days:
+                continue
+            if not all(seq[i] == "S3" for i in (d - 1, d - 2, d - 3)):
+                continue
+            d1 = next((k for k in range(d + 1, min(d + 4, D))
+                       if out.days[k].weekday() not in r.off_days), None)
+            if d1 is not None and seq[d1] == OFF:
+                days_found.append(d1)
+        got[r.id] = sorted(days_found)
     return got
 
 
@@ -400,7 +415,45 @@ def test_at5_starting_state():
     check("streak helper sees 6-night context", n[res[0].id] == 6, str(n))
 
 
+def test_comp_policy():
+    """Post-3-night extra rest day: objective credit + the warning flag."""
+    print("Comp rest policy - 3-night run ending on the regular days off")
+    days = [MONDAY + timedelta(days=i) for i in range(7)]
+    dts = [day_type(d) for d in days]
+    # off_pair_start=3 -> mandatory rest on Thursday + Friday
+    r = Resource(id="rp", name="Anchor person", weight=2, off_pair_start=3)
+
+    def run(seq, res=r):
+        assign = {res.id: seq}
+        v = verify(assign, [res], days, dts, day0={res.id: OFF}, relax_level=0)
+        flags = [x for x in v if x["code"] == "COMP3_NO_EXTRA_REST"]
+        st = compute_stats(assign, [res], days, dts)["resources"][0]
+        return flags, st
+
+    flags, st = run(["S3", "S3", "S3", OFF, OFF, "S1", "S2"])
+    check("3-night run on the anchor pair without an extra day is flagged",
+          len(flags) == 1, f"{len(flags)} flag(s)")
+    check("... and no comp day is credited", st["comp_count"] == 0, str(st["comp_count"]))
+
+    flags, st = run(["S3", "S3", "S3", OFF, OFF, OFF, "S1"])
+    check("the extra rest day after the pair silences the flag", not flags, str(flags))
+    check("... and is credited as a comp day", st["comp_count"] == 1,
+          str(st["comp_count"]))
+
+    # classic case: anchor Sat+Sun, 3 nights Mon-Wed, recovery Thursday (weekday)
+    rc = Resource(id="rc", name="Classic", weight=2, off_pair_start=5)
+    flags, st = run(["S3", "S3", "S3", OFF, "S1", "S2", OFF], rc)
+    check("classic non-anchor comp still credited", st["comp_count"] == 1,
+          str(st["comp_count"]))
+    check("classic non-anchor comp raises no flag", not flags, str(flags))
+
+    # 2-night runs keep today's soft "when coverage allows" wording
+    flags, st = run([OFF, "S3", "S3", OFF, OFF, "S1", "S2"])
+    check("2-night run on the anchor pair raises no flag", not flags, str(flags))
+
+
 def main():
+    test_comp_policy()
     test_at1_basic_seven()
     test_at2_nine_and_slack()
     test_ledger_carryover()

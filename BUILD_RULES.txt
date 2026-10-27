@@ -66,7 +66,17 @@ C. SOFT RULES — OBJECTIVE (single weighted sum, MINIMIZED; negative = reward;
     (term exists only where morning_max > 3, i.e. workdays)
  3  Compensatory rest: non-anchor Off directly after a run of >= 2 nights:
       after a run of >= 3 nights ............................ -2,500
+      (reward for an extra Off day right after the run; unreachable when the
+       recovery day IS the resource's fixed anchor pair — see the anchor-aligned
+       sub-term below)
       after exactly 2 nights ................................ -800
+  3a Anchor-aligned 3-night run: the recovery day IS the fixed anchor pair.
+      The -2,500 term above is unreachable on such runs, so the solver designs
+      runs in front of the pair instead.  A symmetric +2,500 reward is paid for
+      one extra non-anchor Off day directly after the pair (the first weekday
+      off in the 2–3 days following the run).  Same magnitude, same cost — a
+      weekday off is consumed regardless.  Counted in the comp debt ledger
+      exactly like any other compensatory rest day.
  4  Weekday morning weight toward target 9 .............. -200 x min(w, 9)
     (max effect 600 per day)
  5  Post-night return day (first workday after S3 + Off):
@@ -137,11 +147,14 @@ G. INDEPENDENT VERIFIER (rules.py — no solver dependency; tests + UI flags)
 error codes: COVER_MORNING, COVER_MORNING_MAX, COVER_S2, CAP_S2, COVER_S3,
 CAP_S3, CAP_S4, OFFICE, TRANSITION, REST_EVE, WORK_STREAK, NIGHT_STREAK,
 ANCHOR, ROTATION, DAY1_LOCK
-warning code: WEIGHT_BELOW_7 (morning weight < 7 on a workday)
+warning code: WEIGHT_BELOW_7 (morning weight < 7 on a workday),
+    COMP3_NO_EXTRA_REST (3-night run ends on the regular days off but no extra
+    rest day follows the pair — shown as a warning flag in the UI, severity
+    "warning" so it does not fail tests)
 Only severity "error" fails tests.
 
-H. ACCEPTANCE BASELINE (tests.py — 179 checks, all passing)
---------------------------------------------------------------------------------
+H. ACCEPTANCE BASELINE (tests.py — 179 + 6 comp_policy checks, all passing)
+----------------------------------------------------------------------------
 - 7 staff single cycle: solves at L0 with NO relaxations; S4 on 28/28 days;
   <= 1 below-floor weekday; comp spread <= 1; 0 return-rule slips;
   0 evening-rest slips; S4 count within 1 of max for >= 5 of 7 people.
@@ -157,7 +170,12 @@ H. ACCEPTANCE BASELINE (tests.py — 179 checks, all passing)
 - CP-SAT is nondeterministic (8 workers): keep the 180 s limit — 45 s gives
   run-to-run varying incumbents, 180 s is stable, 600 s returned a proven
   (OPTIMAL) result identical to the 180 s one.
-
+- The 6 new test_comp_policy checks (3-night anchor / extra day / classic
+  non-anchor / 2-night anchor) all pass on top of the 179 baseline.
+- After the W_COMP3_ANCHOR term becomes active, comp_total may be > 0 for
+  7-staff cycles where a ≥3-night run's recovery lands on the fixed pair;
+  the comp spread <= 1 constraint still applies, and the ledger will equalize
+  these extra days across subsequent cycles.
 UI / COLOUR (static/style.css)
 --------------------------------------------------------------------------------
 - ALL colour lives in the :root token block of static/style.css. app.js and

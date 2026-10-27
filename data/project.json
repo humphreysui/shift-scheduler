@@ -73,10 +73,10 @@
   "07698ddb": "Off",
   "d4e85186": "S2"
  },
- "current_version_id": "v_0e1f4e10a5",
+ "current_version_id": "v_6b05800063",
  "cycle_current": {
   "2026-10-19": "v_9922de1954",
-  "2026-11-01": "v_0e1f4e10a5"
+  "2026-11-01": "v_6b05800063"
  },
  "versions": [
   {
@@ -6421,6 +6421,1431 @@
       "date": "2026-11-28",
       "type": "light",
       "weight": 3,
+      "count": 2
+     }
+    ]
+   },
+   "relaxations": [],
+   "day0_used": {
+    "de6c4848": "Off",
+    "3af12d62": "Off",
+    "5c7d9929": "S4",
+    "1cedc693": "Off",
+    "1d480a8e": "S3",
+    "07698ddb": "Off",
+    "d4e85186": "S2"
+   },
+   "light_days": []
+  },
+  {
+   "id": "v_17628b1aaf",
+   "cycle_id": "2026-11-01",
+   "label": "Full generation",
+   "created_at": "2026-10-27T18:52:24",
+   "days": [
+    "2026-11-01",
+    "2026-11-02",
+    "2026-11-03",
+    "2026-11-04",
+    "2026-11-05",
+    "2026-11-06",
+    "2026-11-07",
+    "2026-11-08",
+    "2026-11-09",
+    "2026-11-10",
+    "2026-11-11",
+    "2026-11-12",
+    "2026-11-13",
+    "2026-11-14",
+    "2026-11-15",
+    "2026-11-16",
+    "2026-11-17",
+    "2026-11-18",
+    "2026-11-19",
+    "2026-11-20",
+    "2026-11-21",
+    "2026-11-22",
+    "2026-11-23",
+    "2026-11-24",
+    "2026-11-25",
+    "2026-11-26",
+    "2026-11-27",
+    "2026-11-28"
+   ],
+   "assign": {
+    "de6c4848": [
+     "Off",
+     "Off",
+     "S4",
+     "S1",
+     "S2",
+     "S2",
+     "S3",
+     "Off",
+     "Off",
+     "S4",
+     "S1",
+     "S1",
+     "S4",
+     "S3",
+     "Off",
+     "Off",
+     "S1",
+     "S2",
+     "S3",
+     "Off",
+     "S2",
+     "Off",
+     "Off",
+     "S4",
+     "S1",
+     "S1",
+     "S1",
+     "S2"
+    ],
+    "3af12d62": [
+     "Off",
+     "S2",
+     "S2",
+     "S2",
+     "S3",
+     "S3",
+     "Off",
+     "Off",
+     "S2",
+     "S2",
+     "S2",
+     "S3",
+     "S3",
+     "Off",
+     "Off",
+     "S1",
+     "S1",
+     "S4",
+     "S1",
+     "S4",
+     "Off",
+     "Off",
+     "S4",
+     "S1",
+     "S1",
+     "S4",
+     "Off",
+     "Off"
+    ],
+    "5c7d9929": [
+     "S1",
+     "S4",
+     "S3",
+     "Off",
+     "Off",
+     "S1",
+     "S2",
+     "S2",
+     "S3",
+     "S3",
+     "Off",
+     "Off",
+     "S1",
+     "S4",
+     "S3",
+     "S3",
+     "S3",
+     "Off",
+     "Off",
+     "S1",
+     "S1",
+     "S4",
+     "S1",
+     "S2",
+     "Off",
+     "Off",
+     "S4",
+     "S1"
+    ],
+    "1cedc693": [
+     "S4",
+     "S1",
+     "S1",
+     "S1",
+     "S1",
+     "Off",
+     "Off",
+     "S4",
+     "S1",
+     "S1",
+     "S1",
+     "S1",
+     "Off",
+     "Off",
+     "Off",
+     "S4",
+     "S4",
+     "S1",
+     "S1",
+     "Off",
+     "Off",
+     "S2",
+     "S2",
+     "S3",
+     "S3",
+     "S3",
+     "Off",
+     "Off"
+    ],
+    "1d480a8e": [
+     "S3",
+     "S3",
+     "Off",
+     "Off",
+     "S1",
+     "S4",
+     "S1",
+     "Off",
+     "S4",
+     "Off",
+     "Off",
+     "S4",
+     "S1",
+     "S2",
+     "S2",
+     "S2",
+     "Off",
+     "Off",
+     "S2",
+     "S2",
+     "S3",
+     "S3",
+     "S3",
+     "Off",
+     "Off",
+     "S1",
+     "S1",
+     "S4"
+    ],
+    "07698ddb": [
+     "Off",
+     "S1",
+     "S1",
+     "S4",
+     "S4",
+     "S1",
+     "Off",
+     "Off",
+     "S1",
+     "S1",
+     "S4",
+     "S2",
+     "S2",
+     "Off",
+     "Off",
+     "S1",
+     "S2",
+     "S3",
+     "Off",
+     "S3",
+     "Off",
+     "Off",
+     "S1",
+     "S1",
+     "S4",
+     "S2",
+     "S2",
+     "Off"
+    ],
+    "d4e85186": [
+     "S2",
+     "Off",
+     "Off",
+     "S3",
+     "Off",
+     "S1",
+     "S4",
+     "S3",
+     "Off",
+     "Off",
+     "S3",
+     "Off",
+     "S1",
+     "S1",
+     "S4",
+     "Off",
+     "Off",
+     "S1",
+     "S4",
+     "S1",
+     "S4",
+     "S1",
+     "Off",
+     "Off",
+     "S2",
+     "S3",
+     "S3",
+     "S3"
+    ]
+   },
+   "flags": [
+    {
+     "code": "COMP3_NO_EXTRA_REST",
+     "severity": "warning",
+     "day": 19,
+     "resource_id": "5c7d9929",
+     "message": "3-night run ends on the regular days off, but Fri is a S1 day \u2014 no extra rest day after the pair"
+    },
+    {
+     "code": "COMP3_NO_EXTRA_REST",
+     "severity": "warning",
+     "day": 25,
+     "resource_id": "1d480a8e",
+     "message": "3-night run ends on the regular days off, but Thu is a S1 day \u2014 no extra rest day after the pair"
+    },
+    {
+     "code": "EXTRA_MORNING",
+     "severity": "info",
+     "day": 5,
+     "message": "4th morning person added to lift the morning weight \u2014 review if not needed"
+    },
+    {
+     "code": "EXTRA_MORNING",
+     "severity": "info",
+     "day": 12,
+     "message": "4th morning person added to lift the morning weight \u2014 review if not needed"
+    }
+   ],
+   "stats": {
+    "resources": [
+     {
+      "id": "de6c4848",
+      "name": "Liang Dong",
+      "weight": 2,
+      "off_pair": "Sun+Mon",
+      "counts": {
+       "S1": 7,
+       "S2": 5,
+       "S3": 3,
+       "S4": 4
+      },
+      "off_days": 9,
+      "work_days": 19,
+      "extra_rest": [
+       {
+        "day": 19,
+        "date": "2026-11-20"
+       }
+      ],
+      "comp_days": [],
+      "comp_count": 0,
+      "longest_night_run": 1,
+      "week_work_days": [
+       5,
+       5,
+       4,
+       5
+      ],
+      "rotation_ok": true
+     },
+     {
+      "id": "3af12d62",
+      "name": "Zhang Bo",
+      "weight": 3,
+      "off_pair": "Sat+Sun",
+      "counts": {
+       "S1": 5,
+       "S2": 6,
+       "S3": 4,
+       "S4": 4
+      },
+      "off_days": 9,
+      "work_days": 19,
+      "extra_rest": [
+       {
+        "day": 26,
+        "date": "2026-11-27"
+       }
+      ],
+      "comp_days": [],
+      "comp_count": 0,
+      "longest_night_run": 2,
+      "week_work_days": [
+       5,
+       5,
+       5,
+       4
+      ],
+      "rotation_ok": true
+     },
+     {
+      "id": "5c7d9929",
+      "name": "Jin Xin",
+      "weight": 3,
+      "off_pair": "Wed+Thu",
+      "counts": {
+       "S1": 7,
+       "S2": 3,
+       "S3": 6,
+       "S4": 4
+      },
+      "off_days": 8,
+      "work_days": 20,
+      "extra_rest": [],
+      "comp_days": [],
+      "comp_count": 0,
+      "longest_night_run": 3,
+      "week_work_days": [
+       5,
+       5,
+       5,
+       5
+      ],
+      "rotation_ok": true
+     },
+     {
+      "id": "1cedc693",
+      "name": "Sui Qiupeng",
+      "weight": 3,
+      "off_pair": "Fri+Sat",
+      "counts": {
+       "S1": 10,
+       "S2": 2,
+       "S3": 3,
+       "S4": 4
+      },
+      "off_days": 9,
+      "work_days": 19,
+      "extra_rest": [
+       {
+        "day": 14,
+        "date": "2026-11-15"
+       }
+      ],
+      "comp_days": [],
+      "comp_count": 0,
+      "longest_night_run": 3,
+      "week_work_days": [
+       5,
+       5,
+       4,
+       5
+      ],
+      "rotation_ok": true
+     },
+     {
+      "id": "1d480a8e",
+      "name": "Peng Jin",
+      "weight": 2,
+      "off_pair": "Tue+Wed",
+      "counts": {
+       "S1": 5,
+       "S2": 5,
+       "S3": 5,
+       "S4": 4
+      },
+      "off_days": 9,
+      "work_days": 19,
+      "extra_rest": [
+       {
+        "day": 7,
+        "date": "2026-11-08"
+       }
+      ],
+      "comp_days": [],
+      "comp_count": 0,
+      "longest_night_run": 3,
+      "week_work_days": [
+       5,
+       4,
+       5,
+       5
+      ],
+      "rotation_ok": true
+     },
+     {
+      "id": "07698ddb",
+      "name": "Feng YuHan",
+      "weight": 2,
+      "off_pair": "Sat+Sun",
+      "counts": {
+       "S1": 8,
+       "S2": 5,
+       "S3": 2,
+       "S4": 4
+      },
+      "off_days": 9,
+      "work_days": 19,
+      "extra_rest": [
+       {
+        "day": 18,
+        "date": "2026-11-19"
+       }
+      ],
+      "comp_days": [],
+      "comp_count": 0,
+      "longest_night_run": 1,
+      "week_work_days": [
+       5,
+       5,
+       4,
+       5
+      ],
+      "rotation_ok": true
+     },
+     {
+      "id": "d4e85186",
+      "name": "Wang Maoyang",
+      "weight": 1,
+      "off_pair": "Mon+Tue",
+      "counts": {
+       "S1": 6,
+       "S2": 2,
+       "S3": 6,
+       "S4": 4
+      },
+      "off_days": 10,
+      "work_days": 18,
+      "extra_rest": [
+       {
+        "day": 4,
+        "date": "2026-11-05"
+       },
+       {
+        "day": 11,
+        "date": "2026-11-12"
+       }
+      ],
+      "comp_days": [],
+      "comp_count": 0,
+      "longest_night_run": 3,
+      "week_work_days": [
+       4,
+       4,
+       5,
+       5
+      ],
+      "rotation_ok": true
+     }
+    ],
+    "nights_total": 29,
+    "nights_spread": 4,
+    "eves_total": 28,
+    "eves_spread": 4,
+    "comp_total": 0,
+    "comp_spread": 0,
+    "s4_total": 28,
+    "s4_spread": 0,
+    "morning": [
+     {
+      "day": 0,
+      "date": "2026-11-01",
+      "type": "light",
+      "weight": 6,
+      "count": 2
+     },
+     {
+      "day": 1,
+      "date": "2026-11-02",
+      "type": "workday",
+      "weight": 8,
+      "count": 3
+     },
+     {
+      "day": 2,
+      "date": "2026-11-03",
+      "type": "workday",
+      "weight": 7,
+      "count": 3
+     },
+     {
+      "day": 3,
+      "date": "2026-11-04",
+      "type": "workday",
+      "weight": 7,
+      "count": 3
+     },
+     {
+      "day": 4,
+      "date": "2026-11-05",
+      "type": "workday",
+      "weight": 7,
+      "count": 3
+     },
+     {
+      "day": 5,
+      "date": "2026-11-06",
+      "type": "workday",
+      "weight": 8,
+      "count": 4
+     },
+     {
+      "day": 6,
+      "date": "2026-11-07",
+      "type": "light",
+      "weight": 3,
+      "count": 2
+     },
+     {
+      "day": 7,
+      "date": "2026-11-08",
+      "type": "light",
+      "weight": 3,
+      "count": 1
+     },
+     {
+      "day": 8,
+      "date": "2026-11-09",
+      "type": "workday",
+      "weight": 7,
+      "count": 3
+     },
+     {
+      "day": 9,
+      "date": "2026-11-10",
+      "type": "workday",
+      "weight": 7,
+      "count": 3
+     },
+     {
+      "day": 10,
+      "date": "2026-11-11",
+      "type": "workday",
+      "weight": 7,
+      "count": 3
+     },
+     {
+      "day": 11,
+      "date": "2026-11-12",
+      "type": "workday",
+      "weight": 7,
+      "count": 3
+     },
+     {
+      "day": 12,
+      "date": "2026-11-13",
+      "type": "workday",
+      "weight": 8,
+      "count": 4
+     },
+     {
+      "day": 13,
+      "date": "2026-11-14",
+      "type": "light",
+      "weight": 4,
+      "count": 2
+     },
+     {
+      "day": 14,
+      "date": "2026-11-15",
+      "type": "light",
+      "weight": 1,
+      "count": 1
+     },
+     {
+      "day": 15,
+      "date": "2026-11-16",
+      "type": "workday",
+      "weight": 8,
+      "count": 3
+     },
+     {
+      "day": 16,
+      "date": "2026-11-17",
+      "type": "workday",
+      "weight": 8,
+      "count": 3
+     },
+     {
+      "day": 17,
+      "date": "2026-11-18",
+      "type": "workday",
+      "weight": 7,
+      "count": 3
+     },
+     {
+      "day": 18,
+      "date": "2026-11-19",
+      "type": "workday",
+      "weight": 7,
+      "count": 3
+     },
+     {
+      "day": 19,
+      "date": "2026-11-20",
+      "type": "workday",
+      "weight": 7,
+      "count": 3
+     },
+     {
+      "day": 20,
+      "date": "2026-11-21",
+      "type": "light",
+      "weight": 4,
+      "count": 2
+     },
+     {
+      "day": 21,
+      "date": "2026-11-22",
+      "type": "light",
+      "weight": 4,
+      "count": 2
+     },
+     {
+      "day": 22,
+      "date": "2026-11-23",
+      "type": "workday",
+      "weight": 8,
+      "count": 3
+     },
+     {
+      "day": 23,
+      "date": "2026-11-24",
+      "type": "workday",
+      "weight": 7,
+      "count": 3
+     },
+     {
+      "day": 24,
+      "date": "2026-11-25",
+      "type": "workday",
+      "weight": 7,
+      "count": 3
+     },
+     {
+      "day": 25,
+      "date": "2026-11-26",
+      "type": "workday",
+      "weight": 7,
+      "count": 3
+     },
+     {
+      "day": 26,
+      "date": "2026-11-27",
+      "type": "workday",
+      "weight": 7,
+      "count": 3
+     },
+     {
+      "day": 27,
+      "date": "2026-11-28",
+      "type": "light",
+      "weight": 5,
+      "count": 2
+     }
+    ]
+   },
+   "relaxations": [],
+   "day0_used": {
+    "de6c4848": "Off",
+    "3af12d62": "Off",
+    "5c7d9929": "S4",
+    "1cedc693": "Off",
+    "1d480a8e": "S3",
+    "07698ddb": "Off",
+    "d4e85186": "S2"
+   },
+   "light_days": []
+  },
+  {
+   "id": "v_6b05800063",
+   "cycle_id": "2026-11-01",
+   "label": "Recovery rules generation",
+   "created_at": "2026-10-27T21:50:40",
+   "days": [
+    "2026-11-01",
+    "2026-11-02",
+    "2026-11-03",
+    "2026-11-04",
+    "2026-11-05",
+    "2026-11-06",
+    "2026-11-07",
+    "2026-11-08",
+    "2026-11-09",
+    "2026-11-10",
+    "2026-11-11",
+    "2026-11-12",
+    "2026-11-13",
+    "2026-11-14",
+    "2026-11-15",
+    "2026-11-16",
+    "2026-11-17",
+    "2026-11-18",
+    "2026-11-19",
+    "2026-11-20",
+    "2026-11-21",
+    "2026-11-22",
+    "2026-11-23",
+    "2026-11-24",
+    "2026-11-25",
+    "2026-11-26",
+    "2026-11-27",
+    "2026-11-28"
+   ],
+   "assign": {
+    "de6c4848": [
+     "Off",
+     "Off",
+     "S3",
+     "S3",
+     "S3",
+     "Off",
+     "Off",
+     "Off",
+     "Off",
+     "S2",
+     "S2",
+     "S2",
+     "S3",
+     "S3",
+     "Off",
+     "Off",
+     "S1",
+     "S1",
+     "S4",
+     "S4",
+     "S2",
+     "Off",
+     "Off",
+     "S1",
+     "S1",
+     "S4",
+     "S4",
+     "S2"
+    ],
+    "3af12d62": [
+     "Off",
+     "S4",
+     "S1",
+     "S1",
+     "S1",
+     "S1",
+     "Off",
+     "Off",
+     "S4",
+     "S1",
+     "S4",
+     "S1",
+     "S1",
+     "Off",
+     "Off",
+     "S4",
+     "S1",
+     "S1",
+     "S1",
+     "Off",
+     "Off",
+     "Off",
+     "S2",
+     "S2",
+     "S3",
+     "S3",
+     "Off",
+     "Off"
+    ],
+    "5c7d9929": [
+     "S4",
+     "S1",
+     "S1",
+     "Off",
+     "Off",
+     "S1",
+     "S3",
+     "Off",
+     "S1",
+     "S1",
+     "Off",
+     "Off",
+     "S4",
+     "S4",
+     "S4",
+     "S1",
+     "S2",
+     "Off",
+     "Off",
+     "S1",
+     "Off",
+     "S2",
+     "S3",
+     "S3",
+     "Off",
+     "Off",
+     "S1",
+     "S1"
+    ],
+    "1cedc693": [
+     "Off",
+     "S1",
+     "S4",
+     "S1",
+     "S1",
+     "Off",
+     "Off",
+     "S4",
+     "S1",
+     "S4",
+     "S1",
+     "S4",
+     "Off",
+     "Off",
+     "S2",
+     "S2",
+     "S3",
+     "S3",
+     "S3",
+     "Off",
+     "Off",
+     "Off",
+     "S1",
+     "S1",
+     "S1",
+     "S1",
+     "Off",
+     "Off"
+    ],
+    "1d480a8e": [
+     "S3",
+     "S3",
+     "Off",
+     "Off",
+     "Off",
+     "S2",
+     "S2",
+     "S2",
+     "S3",
+     "Off",
+     "Off",
+     "Off",
+     "S2",
+     "S2",
+     "S3",
+     "S3",
+     "Off",
+     "Off",
+     "S1",
+     "S1",
+     "S4",
+     "S4",
+     "S4",
+     "Off",
+     "Off",
+     "S1",
+     "S1",
+     "S4"
+    ],
+    "07698ddb": [
+     "Off",
+     "S2",
+     "S2",
+     "S2",
+     "S2",
+     "S3",
+     "Off",
+     "Off",
+     "S2",
+     "S3",
+     "S3",
+     "S3",
+     "Off",
+     "Off",
+     "Off",
+     "S1",
+     "S4",
+     "S4",
+     "S3",
+     "S3",
+     "Off",
+     "Off",
+     "S1",
+     "S4",
+     "S4",
+     "Off",
+     "S3",
+     "Off"
+    ],
+    "d4e85186": [
+     "S2",
+     "Off",
+     "Off",
+     "S4",
+     "S4",
+     "S4",
+     "S4",
+     "S3",
+     "Off",
+     "Off",
+     "S1",
+     "S1",
+     "S1",
+     "S1",
+     "S1",
+     "Off",
+     "Off",
+     "S2",
+     "S2",
+     "S2",
+     "S3",
+     "S3",
+     "Off",
+     "Off",
+     "S2",
+     "S2",
+     "S2",
+     "S3"
+    ]
+   },
+   "flags": [],
+   "stats": {
+    "resources": [
+     {
+      "id": "de6c4848",
+      "name": "Liang Dong",
+      "weight": 2,
+      "off_pair": "Sun+Mon",
+      "counts": {
+       "S1": 4,
+       "S2": 5,
+       "S3": 5,
+       "S4": 4
+      },
+      "off_days": 10,
+      "work_days": 18,
+      "extra_rest": [
+       {
+        "day": 5,
+        "date": "2026-11-06"
+       },
+       {
+        "day": 6,
+        "date": "2026-11-07"
+       }
+      ],
+      "comp_days": [
+       {
+        "day": 5,
+        "date": "2026-11-06"
+       }
+      ],
+      "comp_count": 1,
+      "longest_night_run": 3,
+      "week_work_days": [
+       3,
+       5,
+       5,
+       5
+      ],
+      "rotation_ok": true
+     },
+     {
+      "id": "3af12d62",
+      "name": "Zhang Bo",
+      "weight": 3,
+      "off_pair": "Sat+Sun",
+      "counts": {
+       "S1": 10,
+       "S2": 2,
+       "S3": 2,
+       "S4": 4
+      },
+      "off_days": 10,
+      "work_days": 18,
+      "extra_rest": [
+       {
+        "day": 19,
+        "date": "2026-11-20"
+       },
+       {
+        "day": 26,
+        "date": "2026-11-27"
+       }
+      ],
+      "comp_days": [
+       {
+        "day": 26,
+        "date": "2026-11-27"
+       }
+      ],
+      "comp_count": 1,
+      "longest_night_run": 2,
+      "week_work_days": [
+       5,
+       5,
+       4,
+       4
+      ],
+      "rotation_ok": true
+     },
+     {
+      "id": "5c7d9929",
+      "name": "Jin Xin",
+      "weight": 3,
+      "off_pair": "Wed+Thu",
+      "counts": {
+       "S1": 9,
+       "S2": 2,
+       "S3": 3,
+       "S4": 4
+      },
+      "off_days": 10,
+      "work_days": 18,
+      "extra_rest": [
+       {
+        "day": 7,
+        "date": "2026-11-08"
+       },
+       {
+        "day": 20,
+        "date": "2026-11-21"
+       }
+      ],
+      "comp_days": [],
+      "comp_count": 0,
+      "longest_night_run": 2,
+      "week_work_days": [
+       5,
+       4,
+       4,
+       5
+      ],
+      "rotation_ok": true
+     },
+     {
+      "id": "1cedc693",
+      "name": "Sui Qiupeng",
+      "weight": 3,
+      "off_pair": "Fri+Sat",
+      "counts": {
+       "S1": 9,
+       "S2": 2,
+       "S3": 3,
+       "S4": 4
+      },
+      "off_days": 10,
+      "work_days": 18,
+      "extra_rest": [
+       {
+        "day": 0,
+        "date": "2026-11-01"
+       },
+       {
+        "day": 21,
+        "date": "2026-11-22"
+       }
+      ],
+      "comp_days": [
+       {
+        "day": 21,
+        "date": "2026-11-22"
+       }
+      ],
+      "comp_count": 1,
+      "longest_night_run": 3,
+      "week_work_days": [
+       4,
+       5,
+       5,
+       4
+      ],
+      "rotation_ok": true
+     },
+     {
+      "id": "1d480a8e",
+      "name": "Peng Jin",
+      "weight": 2,
+      "off_pair": "Tue+Wed",
+      "counts": {
+       "S1": 4,
+       "S2": 5,
+       "S3": 5,
+       "S4": 4
+      },
+      "off_days": 10,
+      "work_days": 18,
+      "extra_rest": [
+       {
+        "day": 4,
+        "date": "2026-11-05"
+       },
+       {
+        "day": 11,
+        "date": "2026-11-12"
+       }
+      ],
+      "comp_days": [],
+      "comp_count": 0,
+      "longest_night_run": 2,
+      "week_work_days": [
+       4,
+       4,
+       5,
+       5
+      ],
+      "rotation_ok": true
+     },
+     {
+      "id": "07698ddb",
+      "name": "Feng YuHan",
+      "weight": 2,
+      "off_pair": "Sat+Sun",
+      "counts": {
+       "S1": 2,
+       "S2": 5,
+       "S3": 7,
+       "S4": 4
+      },
+      "off_days": 10,
+      "work_days": 18,
+      "extra_rest": [
+       {
+        "day": 12,
+        "date": "2026-11-13"
+       },
+       {
+        "day": 25,
+        "date": "2026-11-26"
+       }
+      ],
+      "comp_days": [
+       {
+        "day": 12,
+        "date": "2026-11-13"
+       }
+      ],
+      "comp_count": 1,
+      "longest_night_run": 3,
+      "week_work_days": [
+       5,
+       4,
+       5,
+       4
+      ],
+      "rotation_ok": true
+     },
+     {
+      "id": "d4e85186",
+      "name": "Wang Maoyang",
+      "weight": 1,
+      "off_pair": "Mon+Tue",
+      "counts": {
+       "S1": 5,
+       "S2": 7,
+       "S3": 4,
+       "S4": 4
+      },
+      "off_days": 8,
+      "work_days": 20,
+      "extra_rest": [],
+      "comp_days": [],
+      "comp_count": 0,
+      "longest_night_run": 2,
+      "week_work_days": [
+       5,
+       5,
+       5,
+       5
+      ],
+      "rotation_ok": true
+     }
+    ],
+    "nights_total": 29,
+    "nights_spread": 5,
+    "eves_total": 28,
+    "eves_spread": 5,
+    "comp_total": 4,
+    "comp_spread": 1,
+    "s4_total": 28,
+    "s4_spread": 0,
+    "morning": [
+     {
+      "day": 0,
+      "date": "2026-11-01",
+      "type": "light",
+      "weight": 3,
+      "count": 1
+     },
+     {
+      "day": 1,
+      "date": "2026-11-02",
+      "type": "workday",
+      "weight": 9,
+      "count": 3
+     },
+     {
+      "day": 2,
+      "date": "2026-11-03",
+      "type": "workday",
+      "weight": 9,
+      "count": 3
+     },
+     {
+      "day": 3,
+      "date": "2026-11-04",
+      "type": "workday",
+      "weight": 7,
+      "count": 3
+     },
+     {
+      "day": 4,
+      "date": "2026-11-05",
+      "type": "workday",
+      "weight": 7,
+      "count": 3
+     },
+     {
+      "day": 5,
+      "date": "2026-11-06",
+      "type": "workday",
+      "weight": 7,
+      "count": 3
+     },
+     {
+      "day": 6,
+      "date": "2026-11-07",
+      "type": "light",
+      "weight": 1,
+      "count": 1
+     },
+     {
+      "day": 7,
+      "date": "2026-11-08",
+      "type": "light",
+      "weight": 3,
+      "count": 1
+     },
+     {
+      "day": 8,
+      "date": "2026-11-09",
+      "type": "workday",
+      "weight": 9,
+      "count": 3
+     },
+     {
+      "day": 9,
+      "date": "2026-11-10",
+      "type": "workday",
+      "weight": 9,
+      "count": 3
+     },
+     {
+      "day": 10,
+      "date": "2026-11-11",
+      "type": "workday",
+      "weight": 7,
+      "count": 3
+     },
+     {
+      "day": 11,
+      "date": "2026-11-12",
+      "type": "workday",
+      "weight": 7,
+      "count": 3
+     },
+     {
+      "day": 12,
+      "date": "2026-11-13",
+      "type": "workday",
+      "weight": 7,
+      "count": 3
+     },
+     {
+      "day": 13,
+      "date": "2026-11-14",
+      "type": "light",
+      "weight": 4,
+      "count": 2
+     },
+     {
+      "day": 14,
+      "date": "2026-11-15",
+      "type": "light",
+      "weight": 4,
+      "count": 2
+     },
+     {
+      "day": 15,
+      "date": "2026-11-16",
+      "type": "workday",
+      "weight": 8,
+      "count": 3
+     },
+     {
+      "day": 16,
+      "date": "2026-11-17",
+      "type": "workday",
+      "weight": 7,
+      "count": 3
+     },
+     {
+      "day": 17,
+      "date": "2026-11-18",
+      "type": "workday",
+      "weight": 7,
+      "count": 3
+     },
+     {
+      "day": 18,
+      "date": "2026-11-19",
+      "type": "workday",
+      "weight": 7,
+      "count": 3
+     },
+     {
+      "day": 19,
+      "date": "2026-11-20",
+      "type": "workday",
+      "weight": 7,
+      "count": 3
+     },
+     {
+      "day": 20,
+      "date": "2026-11-21",
+      "type": "light",
+      "weight": 2,
+      "count": 1
+     },
+     {
+      "day": 21,
+      "date": "2026-11-22",
+      "type": "light",
+      "weight": 2,
+      "count": 1
+     },
+     {
+      "day": 22,
+      "date": "2026-11-23",
+      "type": "workday",
+      "weight": 7,
+      "count": 3
+     },
+     {
+      "day": 23,
+      "date": "2026-11-24",
+      "type": "workday",
+      "weight": 7,
+      "count": 3
+     },
+     {
+      "day": 24,
+      "date": "2026-11-25",
+      "type": "workday",
+      "weight": 7,
+      "count": 3
+     },
+     {
+      "day": 25,
+      "date": "2026-11-26",
+      "type": "workday",
+      "weight": 7,
+      "count": 3
+     },
+     {
+      "day": 26,
+      "date": "2026-11-27",
+      "type": "workday",
+      "weight": 7,
+      "count": 3
+     },
+     {
+      "day": 27,
+      "date": "2026-11-28",
+      "type": "light",
+      "weight": 5,
       "count": 2
      }
     ]

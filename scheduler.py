@@ -5,7 +5,7 @@ Objective tiers (weighted sum, big gaps so it behaves lexicographically):
   2. extra (4th) morning person cost (2000 each)         - minimize
   3. compensatory rest after a 3-night run (2500)        - maximize
   4. weekday mornings toward weight target (200/max 600) - maximize
-  5. post-night return day prefers S2, avoids S1/S4      - steer
+  5. post-night return day: hard order S2 > S1 > S4, never S3  - steer
   6. 2nd night S3 coverage (1000 each)                   - maximize (night priority)
   7. 2nd evening S2 coverage (150 each)                  - maximize
   8. night fairness: cumulative balance incl. ledger  - balance
@@ -18,6 +18,10 @@ Objective tiers (weighted sum, big gaps so it behaves lexicographically):
 
 Hard transitions: after a night (S3) only Off/S3; after an evening (S2) the
 next day may not be S1/S4 (only ~9h rest) — relaxed only as the last resort.
+Recovery hard rules (both bent only at the last relaxation level, with a red
+flag): every >= 3-night run buys an extra rest day after the anchor pair, and
+the first workday after a night run + Off recovery is S2, else S1 (S4 last
+resort, S3 never).
 """
 from __future__ import annotations
 
@@ -44,7 +48,8 @@ W_COMP3_ANCHOR = 2_500  # 3-night run whose recovery IS the regular pair: pay fo
 W_S3_COVERAGE = 1_000
 W_TOWARD_TARGET = 200
 W_RETURN_S2 = 300      # first workday after night recovery: prefer S2 (wfh)
-W_RETURN_AVOID = 800   # ... avoid S1 (office) / S4 (07:00) that day
+W_RETURN_AVOID = 800   # ... S4 (07:00) only as the very last resort (level 6)
+W_RETURN_NIGHT = 2400  # ... S3 straight back to nights is never in the order
 W_S2_COVERAGE = 150
 W_NIGHT_CUM_SPREAD = 50              # per hundredth of cumulative night imbalance
 W_NIGHT_CUM_ABS = 25                 # ... plus per hundredth away from the common target
@@ -110,6 +115,11 @@ class SolveParams:
     start_date: date
     light_days: set = field(default_factory=set)
     day0: dict = field(default_factory=dict)            # rid -> "yesterday" value
+    prev_tail: dict = field(default_factory=dict)       # rid -> up to 6 assignment
+                                                        # values right before start_date
+                                                        # (already day0-override applied
+                                                        # to its last slot) - used for
+                                                        # cross-cycle recovery rules
     day1_overrides: dict = field(default_factory=dict)  # rid -> locked day-1 value
     debt: dict = field(default_factory=dict)            # rid -> night/eve/comp/s4/off (hundredths)
     prev_work_streak: dict = field(default_factory=dict)
@@ -133,6 +143,8 @@ class SolveResult:
     day_types: list = field(default_factory=list)
     flags: list = field(default_factory=list)
     stats: dict = field(default_factory=dict)
+    prev_tail: dict = field(default_factory=dict)
+    day0: dict = field(default_factory=dict)
 
 
 def _lsum(expressions):
@@ -140,7 +152,12 @@ def _lsum(expressions):
 
 
 def _and(model, lits, name):
-    """BoolVar that is true iff every literal in `lits` is true."""
+    """BoolVar that is true iff every literal in `lits` is true (const-folds)."""
+    if any(isinstance(l, bool) and not l for l in lits):
+        return False
+    lits = [l for l in lits if not (isinstance(l, bool) and l)]
+    if not lits:
+        return True
     if len(lits) == 1:
         return lits[0]
     q = model.NewBoolVar(name)
@@ -148,6 +165,19 @@ def _and(model, lits, name):
     for l in lits:
         model.AddImplication(q, l)
     return q
+
+
+def _or(model, lits, name):
+    """BoolVar that is true iff any literal in `lits` is true (const-folds)."""
+    trues = [l for l in lits if isinstance(l, bool) and l]
+    if trues:
+        return True
+    lits = [l for l in lits if not (isinstance(l, bool) and not l)]
+    if not lits:
+        return False
+    if len(lits) == 1:
+        return lits[0]
+    return _and(model, [l.Not() for l in lits], name).Not()
 
 
 def _solve_once(p: SolveParams, relax: int):
@@ -364,25 +394,48 @@ def _solve_once(p: SolveParams, relax: int):
                 if days[d].weekday() in r.off_days:
                     terms.append(W_ANCHOR_SOFT * (1 - off[r.id, d]))
 
-    # ---- post-night return preference ----
-    # First workday after a night-recovery day (S3, then Off): prefer S2
-    # (evening, work from home) over S1 (office) or S4 (07:00 support), so the
-    # resource can rest more after the night block.
+    # ---- post-night return day: HARD order S2 > S1 > S4 (S3 never) ----
+    # After any night run (>= 1 S3) followed by >= 1 Off recovery day(s), the
+    # first workday back must be S2, else S1; S4 only fits at the last
+    # relaxation level (loud flag), a straight S3 back-to-nights is never in
+    # the order.  runend[t] := the Off recovery run preceded by a night ends at
+    # day t;   runend[t] = off[t] AND (prevnight[t] OR runend[t-1]),
+    # with prevnight[t] = t==0 ? day0=="S3" : x[t-1,"S3"], and t<0 taken from
+    # prev_tail (so a return landing on day 1 of the cycle is covered too).
     for r in R:
-        for d in range(1, D):
-            if d == 1:
-                if p.day0.get(r.id, OFF) != "S3":
-                    continue
-                pre = off[r.id, 0]
+        tail = list(p.prev_tail.get(r.id, []))
+        re_prev = False                      # runend[t] for t < 0 (const prefix)
+        for t in range(-len(tail), 0):
+            off_t = tail[t + len(tail)] == OFF
+            pn = t - 1 >= -len(tail) and tail[t - 1 + len(tail)] == "S3"
+            re_prev = off_t and (pn or re_prev)
+        for d in range(D):
+            # re_prev == runend[d-1]: True means day d IS the return day
+            if relax < 6 and re_prev is not False:
+                ban = model.Add(x[r.id, d, "S3"] + x[r.id, d, "S4"] == 0)
+                if re_prev is not True:
+                    ban.OnlyEnforceIf(re_prev)
+            if re_prev is not False:
+                q2 = _and(model, [re_prev, x[r.id, d, "S2"]], f"ret2_{r.id}_{d}")
+                if q2 is not False:
+                    terms.append(-W_RETURN_S2 * q2)
+                q4 = _and(model, [re_prev, x[r.id, d, "S4"]], f"ret4_{r.id}_{d}")
+                if q4 is not False:
+                    terms.append(W_RETURN_AVOID * q4)
+                q3 = _and(model, [re_prev, x[r.id, d, "S3"]], f"ret3_{r.id}_{d}")
+                if q3 is not False:
+                    terms.append(W_RETURN_NIGHT * q3)
+            # advance runend to day d (used as runend[d-1] for day d+1)
+            off_d = off[r.id, d]
+            if d == 0:
+                pn0 = p.day0.get(r.id, OFF) == "S3"
+                re_prev = off_d if pn0 else _and(model, [off_d, re_prev],
+                                                 f"re_{r.id}_0")
             else:
-                pre = _and(model, [x[r.id, d - 2, "S3"], off[r.id, d - 1]],
-                           f"ret_{r.id}_{d}")
-            q2 = _and(model, [pre, x[r.id, d, "S2"]], f"ret2_{r.id}_{d}")
-            terms.append(-W_RETURN_S2 * q2)
-            q1 = _and(model, [pre, x[r.id, d, "S1"]], f"ret1_{r.id}_{d}")
-            terms.append(W_RETURN_AVOID * q1)
-            q4 = _and(model, [pre, x[r.id, d, "S4"]], f"ret4_{r.id}_{d}")
-            terms.append(W_RETURN_AVOID * q4)
+                re_prev = _or(model, [x[r.id, d - 1, "S3"], re_prev],
+                              f"reor_{r.id}_{d}")
+                if re_prev is not False:
+                    re_prev = _and(model, [off_d, re_prev], f"re_{r.id}_{d}")
 
     # ---- compensatory rest day right after a night run ----
     # An extra Off day (not an anchor day) directly after the last night of a
@@ -408,20 +461,62 @@ def _solve_once(p: SolveParams, relax: int):
     # ---- anchor-aligned recovery: the rest right after a 3-night run IS the
     # resource's fixed pair, so the -W_COMP3 reward above is unreachable and the
     # solver simply ends runs in front of the pair (the live Nov 1-28 roster has
-    # 5 such runs and 0 comp days). Pay for the EXTRA day after the pair instead
-    # and count it in the comp ledger, exactly like a non-anchor comp day.
+    # 5 such runs and 0 comp days). The EXTRA day after the pair is therefore a
+    # HARD recovery rule: off[d1] is forced below the last relaxation level and
+    # flagged loudly when bent there. Runs are read across the cycle seam via
+    # prev_tail, so a run at the end of the previous cycle pins d1 in this cycle
+    # (case B), and a run here whose d1 lands next cycle is pinned by the next
+    # cycle's copy of case B.
+
+    def _night_lit(r, j):
+        if j >= 0:
+            return x[r.id, j, "S3"]
+        tl = p.prev_tail.get(r.id, [])
+        if j == -1:
+            if tl:
+                return tl[-1] == "S3"
+            return p.day0.get(r.id, OFF) == "S3"
+        return tl[j + len(tl)] == "S3" if j + len(tl) >= 0 else False
+
     for r in R:
-        for d in range(3, D):
+        tail = list(p.prev_tail.get(r.id, []))
+        # (A) recovery day inside this cycle
+        for d in range(D):
             if days[d].weekday() not in r.off_days:
                 continue                      # recovery day must be a regular off day
             d1 = next((k for k in range(d + 1, min(d + 4, D))
                        if days[k].weekday() not in r.off_days), None)
             if d1 is None:
-                continue                      # extra day would fall in the next cycle
-            e = _and(model, [off[r.id, d], x[r.id, d - 1, "S3"], x[r.id, d - 2, "S3"],
-                             x[r.id, d - 3, "S3"], off[r.id, d1]], f"c3a_{r.id}_{d}")
-            terms.append(-W_COMP3_ANCHOR * e)
-            comp_exprs[r.id].append(e)
+                continue                      # extra day falls in the next cycle
+            trig = _and(model, [off[r.id, d], _night_lit(r, d - 1),
+                                _night_lit(r, d - 2), _night_lit(r, d - 3)],
+                        f"c3t_{r.id}_{d}")
+            if trig is False:
+                continue
+            if relax < 6:
+                pin = model.Add(off[r.id, d1] == 1)
+                if trig is not True:
+                    pin.OnlyEnforceIf(trig)
+            e = _and(model, [trig, off[r.id, d1]], f"c3a_{r.id}_{d}")
+            if e is not False:
+                terms.append(-W_COMP3_ANCHOR * e)
+                comp_exprs[r.id].append(e)
+        # (B) recovery day was in the previous cycle -> pin the extra day here
+        for q in range(-len(tail), 0):
+            if tail[q + len(tail)] != OFF:
+                continue                      # that day was not an Off recovery
+            if any(not (q - 1 - k + len(tail) >= 0
+                        and tail[q - 1 - k + len(tail)] == "S3") for k in range(3)):
+                continue                      # not a >= 3-night run (or unknown)
+            if (p.start_date + timedelta(days=q)).weekday() not in r.off_days:
+                continue                      # the forced Off itself was the comp day
+            d1 = next((k for k in range(q + 1, q + 4)
+                       if (p.start_date + timedelta(days=k)).weekday()
+                       not in r.off_days), None)
+            if d1 is None or d1 < 0:
+                continue                      # owned by the neighbouring cycle
+            if relax < 6:
+                model.Add(off[r.id, d1] == 1)
 
     ccum = []
     for r in R:
@@ -554,7 +649,8 @@ def generate(p: SolveParams) -> SolveResult:
     violations = verify(assign, R, days, day_types, day0=p.day0,
                         day1_overrides=p.day1_overrides, relax_level=level,
                         prev_work_streak=p.prev_work_streak,
-                        prev_night_streak=p.prev_night_streak)
+                        prev_night_streak=p.prev_night_streak,
+                        prev_tail=p.prev_tail)
     flags = list(violations)
     for i, msg in enumerate(relaxations):
         flags.append({"code": f"RELAX_{i + 1}", "severity": "warning", "message": msg})
@@ -565,7 +661,8 @@ def generate(p: SolveParams) -> SolveResult:
                 flags.append({"code": "EXTRA_MORNING", "severity": "info", "day": d,
                               "message": "4th morning person added to lift the morning weight — review if not needed"})
 
-    stats = compute_stats(assign, R, days, day_types)
+    stats = compute_stats(assign, R, days, day_types, prev_tail=p.prev_tail)
     return SolveResult(status=status, relax_level=level, relaxations=relaxations,
                        assign=assign, days=days, day_types=day_types,
-                       flags=flags, stats=stats)
+                       flags=flags, stats=stats, prev_tail=p.prev_tail,
+                       day0=dict(p.day0))

@@ -251,7 +251,7 @@ def generate_cycle(payload: dict = Body(default={})):
         raise HTTPException(400, " | ".join(errs))
     params = SolveParams(
         resources=resources, start_date=start, light_days=light,
-        day0=day0_eff, day1_overrides=day1_ov, debt=_debts(),
+        day0=day0_eff, prev_tail=tails, day1_overrides=day1_ov, debt=_debts(),
         prev_work_streak=wstreak, prev_night_streak=nstreak,
         priority=store.project["settings"].get("priority", "floor_first"))
     res = generate(params)
@@ -329,7 +329,7 @@ def repair_cell(payload: dict = Body(default={})):
     wstreak, nstreak = streaks_from_tail(tails)
     params = SolveParams(
         resources=active, start_date=start, light_days=light,
-        day0=day0, day1_overrides={}, debt=_debts(),
+        day0=day0, prev_tail=tails, day1_overrides={}, debt=_debts(),
         prev_work_streak=wstreak, prev_night_streak=nstreak,
         baseline=baseline, change_from_day=day, edited_resource=rid,
         priority=store.project["settings"].get("priority", "floor_first"))

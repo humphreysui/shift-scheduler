@@ -48,8 +48,13 @@ python tests.py
 - Slack policy (7 staff ≈ 4 spare person-days/week): weight fixes first, then a
   2nd night person, then a 2nd evening person, remainder as extra rest
   (compensatory rest after night runs has priority whenever coverage allows).
-- **Return after nights**: the first workday after a night block's rest day prefers
-  S2 (evening, home) instead of S1 (office) or S4 (07:00) so the resource can rest more.
+- **Return after nights** (hard rule): after any night block (≥1 S3) and its Off
+  recovery day(s), the first workday back follows the order **S2 > S1 > S4** —
+  S2 (evening, home) first, then S1 (office); S4 (07:00) only as a last resort once
+  S2 and S1 are impossible, and going straight back to nights (S3) is never part of
+  the order. A breach is an error in normal generation; only the last relaxation
+  level may bend it, and then the day is flagged red in the UI. The scan walks the
+  whole rest run (not just one day) and works across cycle boundaries.
 - **Rest after evenings**: after an S2 (ends 23:00) the next day is never S1 or S4
   (07:00–08:00 starts → only 8–9h rest) — a hard rule; bent only as the very last
   resort and the affected day is flagged.
@@ -57,14 +62,16 @@ python tests.py
   run is strongly preferred).  Comp days are counted per person, shown as **C** in the
   grid, and equalized across cycles with their own debt ledger entry.
 
-  **Extra rest after a 3-night run whose recovery IS the regular days off**: if a
-  ≥3‑night run ends on the resource's fixed pair, the solver places the pair as the
-  recovery slot (no weekday off is lost), and the app now rewards/pays for one extra
-  non‑anchor Off day directly after the pair (the first weekday off in the 2–3 days
-  following the run).  This is a soft incentive — the solver always prefers it when
-  coverage allows, and a warning flag appears in the UI when coverage won't permit it.
-  The extra day is tracked in the comp debt ledger just like any other compensatory
-  rest day, so it carries over and is repaid across cycles exactly like any other comp day.
+  **Extra rest after a 3‑night run (hard rule)**: every ≥3‑night run buys one
+  extra rest day. When the recovery slot IS the resource's fixed pair, the first
+  non‑anchor day after the pair is **forced Off** — generation cannot skip it
+  (the forced Off right after the run already counts when it falls on a weekday).
+  If coverage or a locked cell makes it impossible, the schedule only solves at
+  the last relaxation level and the day is flagged red (an error below that level).
+  Runs are read across cycle boundaries: a ≥3‑night run at the end of one cycle
+  pins the extra day into the start of the next, so nothing goes silent at the seam.
+  The day is tracked in the comp debt ledger just like any other compensatory
+  rest day, so it carries over and is repaid across cycles.
 - **Support shift (S4)**: staffed every day (07:00 handover takes over so the night
   person can leave on time), tilted toward lower availability weights, spread equally across
   the team and tracked in the debt ledger.

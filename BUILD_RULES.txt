@@ -19,7 +19,9 @@ A. MODEL / INPUTS
   holidays can be marked light.
 - Cross-cycle inputs: ledger debts per person (night/eve/comp/s4/off,
   in hundredths), yesterday's state (day-0 shift per person) + derived tail
-  streak counters, optional locked day-1 values, priority mode
+  streak counters, the previous cycle's tail assignments (up to 6 values,
+  day-0 override applied — SolveParams.prev_tail, feeds the cross-seam
+  recovery rules H14/H15), optional locked day-1 values, priority mode
   (floor_first = default | nights_first).
 
 B. HARD RULES — solver constraints (schedule invalid if violated)
@@ -55,6 +57,20 @@ H13 Morning WEIGHT floor (separate from H2's count): sum of morning-crew
     availability weights on a workday should be >= 7 (target 9). Implemented as
     a soft big-M indicator (M_BELOW = 12) costing 1,000,000 per below-floor
     workday — near-hard in practice, reported as a warning flag.
+H14 Post-night RETURN day: after any night run (>= 1 S3) followed by >= 1
+    Off recovery day(s), the first workday back follows the hard order
+    S2 > S1 > S4 — S3 (straight back to nights) is never in the order.
+    The scan walks the WHOLE Off run (not just one day) and crosses the cycle
+    seam via prev_tail, so a return landing on day 1 of the cycle is covered.
+    Violations: error below L6, loud RETURN_ORDER warning at L6.           [L6]
+H15 Compensatory REST day: every run of >= 3 consecutive S3 buys one extra
+    non-anchor Off day. If the recovery day is the fixed anchor pair, the
+    first non-anchor day after the pair (d1) is FORCED Off below L6; the
+    forced Off right after the run already counts when it is itself
+    non-anchor. Runs are read across the cycle seam via prev_tail: a run at
+    the end of the previous cycle pins d1 here, and a run here whose d1
+    lands next cycle is pinned by the next cycle's copy of the same check.
+    Violations: error below L6, loud COMP3_NO_EXTRA_REST warning at L6.    [L6]
 
 C. SOFT RULES — OBJECTIVE (single weighted sum, MINIMIZED; negative = reward;
    tiers below follow the header docstring of scheduler.py; large gaps between
@@ -77,11 +93,19 @@ C. SOFT RULES — OBJECTIVE (single weighted sum, MINIMIZED; negative = reward;
       off in the 2–3 days following the run).  Same magnitude, same cost — a
       weekday off is consumed regardless.  Counted in the comp debt ledger
       exactly like any other compensatory rest day.
+      SINCE the recovery rework this extra day is ALSO a hard constraint
+      (H15): off[d1] is forced below L6 — the reward only breaks ties inside
+      the feasible set, and the cross-seam case (d1 in the next cycle) is
+      pinned from prev_tail instead of rewarded here.
  4  Weekday morning weight toward target 9 .............. -200 x min(w, 9)
     (max effect 600 per day)
- 5  Post-night return day (first workday after S3 + Off):
+ 5  Post-night return day (first workday after S3 + Off recovery run) —
+    preference terms INSIDE the hard order (H14); below L6 the constraint
+    already forbids S3/S4 there, so only the S2 tie-break bites:
       taken as S2 .......................................... -300
-      taken as S1 or S4 .................................. +800 each
+      taken as S4 (last resort, only at L6) ............... +800
+      taken as S3 (never in the order; steer at L6) .... +2,400
+      taken as S1 (second choice) ......................... 0 (allowed)
  6  Night (S3) coverage: per assignment .................. -1,000
  7  Evening (S2) coverage: per assignment ................... -150
  8  Night fairness: cum = 100 x cycle nights + ledger debt (hundredths);
@@ -117,7 +141,9 @@ L2  consecutive-day limits relaxed (work 5->6, nights 3->4)
 L3  coverage caps relaxed (S2/S3 max 2->3)
 L4  morning minimum lowered (workday crew 3->2 — flagged day)
 L5  off-day anchors relaxed (worked anchor day, soft +200,000 — flagged)
-L6  evening rest relaxed (S1/S4 right after an S2 allowed — flagged)
+L6  evening rest relaxed (S1/S4 right after an S2 allowed — flagged);
+    the recovery hard rules H14/H15 bend too (RETURN_ORDER and
+    COMP3_NO_EXTRA_REST drop from error to loud warning — flagged)
 Everything in section B marked [never] stays hard even at L6.
 
 E. CROSS-CYCLE LEDGER (carryover between cycles)
@@ -147,13 +173,17 @@ G. INDEPENDENT VERIFIER (rules.py — no solver dependency; tests + UI flags)
 error codes: COVER_MORNING, COVER_MORNING_MAX, COVER_S2, CAP_S2, COVER_S3,
 CAP_S3, CAP_S4, OFFICE, TRANSITION, REST_EVE, WORK_STREAK, NIGHT_STREAK,
 ANCHOR, ROTATION, DAY1_LOCK
-warning code: WEIGHT_BELOW_7 (morning weight < 7 on a workday),
-    COMP3_NO_EXTRA_REST (3-night run ends on the regular days off but no extra
-    rest day follows the pair — shown as a warning flag in the UI, severity
-    "warning" so it does not fail tests)
+warning code: WEIGHT_BELOW_7 (morning weight < 7 on a workday)
+level-dependent (the two recovery hard rules, H14/H15): RETURN_ORDER
+    (first workday after a night run + Off recovery is not S2/S1) and
+    COMP3_NO_EXTRA_REST (>= 3-night run without the extra rest day after the
+    pair) are errors BELOW L6 and loud warnings AT L6 — "bend only at the
+    last relaxation level, with a red flag". verify() reads prev_tail, so
+    both codes also catch returns / extra days crossing the cycle seam.
 Only severity "error" fails tests.
 
-H. ACCEPTANCE BASELINE (tests.py — 179 + 6 comp_policy checks, all passing)
+H. ACCEPTANCE BASELINE (tests.py — 201 checks, all passing: 179 original +
+   22 recovery-policy checks)
 ----------------------------------------------------------------------------
 - 7 staff single cycle: solves at L0 with NO relaxations; S4 on 28/28 days;
   <= 1 below-floor weekday; comp spread <= 1; 0 return-rule slips;
@@ -170,8 +200,14 @@ H. ACCEPTANCE BASELINE (tests.py — 179 + 6 comp_policy checks, all passing)
 - CP-SAT is nondeterministic (8 workers): keep the 180 s limit — 45 s gives
   run-to-run varying incumbents, 180 s is stable, 600 s returned a proven
   (OPTIMAL) result identical to the 180 s one.
-- The 6 new test_comp_policy checks (3-night anchor / extra day / classic
-  non-anchor / 2-night anchor) all pass on top of the 179 baseline.
+- The 22 test_comp_policy checks cover both recovery hard rules: 3-night
+  anchor / extra day / classic non-anchor / 2-night anchor, the error ->
+  warning severity flip at L6, the cross-seam pin (run + anchor recovery at
+  the end of the previous cycle, extra day in THIS cycle), and the return
+  order (S4/S3 flagged, S1/S2 allowed, multi-Off recovery runs scanned).
+- RETURN-rule metric: return_violations counts first-workday-back days that
+  are neither S2 nor S1 (S3/S4); bound is 0 at every level below L6, and a
+  bent return order must carry a RETURN_ORDER flag at L6.
 - After the W_COMP3_ANCHOR term becomes active, comp_total may be > 0 for
   7-staff cycles where a ≥3-night run's recovery lands on the fixed pair;
   the comp spread <= 1 constraint still applies, and the ledger will equalize

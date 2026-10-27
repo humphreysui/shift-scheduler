@@ -51,6 +51,8 @@ def structural(violations):
 
 
 def full_verify(out, resources, **kw):
+    kw.setdefault("day0", getattr(out, "day0", None) or {})
+    kw.setdefault("prev_tail", getattr(out, "prev_tail", None) or {})
     return verify(out.assign, resources, out.days, out.day_types,
                   relax_level=out.relax_level, **kw)
 
@@ -59,11 +61,14 @@ def rebuild_comp_days(out, res):
     """Independent rebuild of comp days:
        - extra Off (non-anchor) directly after a >= 2 night run, and
        - for a 3-night run whose recovery day IS an anchor day, the first
-         non-anchor day after the pair (the "extra day beyond the pair").
+         non-anchor day after the pair (the "extra day beyond the pair"),
+         including the day pinned in from a run at the end of the previous
+         cycle (out.prev_tail).
     Mirrors rules.compute_stats on purpose: the two are compared for equality.
     """
     got = {}
     D = len(out.days)
+    tail_all = getattr(out, "prev_tail", None) or {}
     for r in res:
         seq = out.assign[r.id]
         days_found = []
@@ -85,18 +90,48 @@ def rebuild_comp_days(out, res):
                        if out.days[k].weekday() not in r.off_days), None)
             if d1 is not None and seq[d1] == OFF:
                 days_found.append(d1)
+        tl = list(tail_all.get(r.id, []))
+        for q in range(-len(tl), 0):
+            if tl[q + len(tl)] != OFF:
+                continue
+            if any(not (q - 1 - k + len(tl) >= 0
+                        and tl[q - 1 - k + len(tl)] == "S3") for k in range(3)):
+                continue
+            if (out.days[0] + timedelta(days=q)).weekday() not in r.off_days:
+                continue
+            d1 = next((k for k in range(q + 1, q + 4)
+                       if (out.days[0] + timedelta(days=k)).weekday()
+                       not in r.off_days), None)
+            if d1 is not None and 0 <= d1 < D and seq[d1] == OFF \
+                    and d1 not in days_found:
+                days_found.append(d1)
         got[r.id] = sorted(days_found)
     return got
 
 
 def return_violations(out, res):
-    """Count first-workday-after-night-recovery days placed on S1 or S4."""
+    """Count return days breaking the hard order S2 > S1 > S4 (S3 never).
+
+    A return day is the first workday after a night run followed by >= 1 Off
+    recovery day(s); out.prev_tail/out.day0 cover returns landing on day 1.
+    """
     n = 0
+    tail_all = getattr(out, "prev_tail", None) or {}
+    day0 = getattr(out, "day0", None) or {}
     for r in res:
         seq = out.assign[r.id]
-        for d in range(2, 28):
-            if seq[d - 1] == OFF and seq[d - 2] == "S3" and seq[d] in ("S1", "S4"):
+        tl = list(tail_all.get(r.id, []))
+        runend = False
+        for t in range(-len(tl), 0):
+            off_t = tl[t + len(tl)] == OFF
+            pn = t - 1 >= -len(tl) and tl[t - 1 + len(tl)] == "S3"
+            runend = off_t and (pn or runend)
+        for d in range(len(out.days)):
+            if runend and seq[d] != OFF and seq[d] not in ("S2", "S1"):
                 n += 1
+            off_d = seq[d] == OFF
+            pn = day0.get(r.id, OFF) == "S3" if d == 0 else seq[d - 1] == "S3"
+            runend = off_d and (pn or runend)
     return n
 
 
@@ -180,7 +215,8 @@ def test_at1_basic_seven():
           sum(1 for c in s4counts if c >= max(s4counts) - 1) >= 5,
           f"{s4counts}")
     rv = return_violations(out, res)
-    check("post-night return avoids S1/S4", rv <= 1, f"{rv} violations")
+    check("post-night return keeps the hard order S2 > S1 > S4", rv == 0,
+          f"{rv} violations")
     ev = evening_rest_violations(out, res)
     check("no S1/S4 start right after an evening (S2) shift", ev == 0, f"{ev} violations")
     print(f"  [note] 7 staff: {out.stats['comp_total']} comp day(s), "
@@ -230,10 +266,15 @@ def test_at2_nine_and_slack():
     check("S4 staffed nearly every day", s4days >= 26, f"{s4days}/28")
     check("S4 spread <= 1", out.stats["s4_spread"] <= 1, str(out.stats["s4_spread"]))
     rv = return_violations(out, res)
-    # Best effort: with the hard evening-rest rule plus daily S4, a return day
-    # can be forced onto S1/S4 when the day's only available candidates are
-    # themselves returning (observed up to 3 in 45s incumbents at 9 staff).
-    check("post-night return avoids S1/S4 (best effort)", rv <= 3, f"{rv} violations")
+    # Hard rule: 0 violations at every relaxation level below the last one;
+    # only the top level may bend it (loud RETURN_ORDER warning in flags).
+    bent = out.relax_level == 6 and rv > 0
+    check("post-night return keeps the hard order S2 > S1 > S4",
+          rv == 0 or bent,
+          f"{rv} violations at level {out.relax_level}")
+    if bent:
+        check("... a bent return order is loudly flagged",
+              any(f["code"] == "RETURN_ORDER" for f in out.flags), "no flag")
     ev = evening_rest_violations(out, res)
     check("no S1/S4 start right after an S2 (hard rest rule)", ev == 0, f"{ev} violations")
     print(f"  [note] 9 staff: {out.stats['comp_total']} comp days (spread "
@@ -416,40 +457,104 @@ def test_at5_starting_state():
 
 
 def test_comp_policy():
-    """Post-3-night extra rest day: objective credit + the warning flag."""
+    """Recovery hard rules: post-3-night extra rest day + post-night return order."""
     print("Comp rest policy - 3-night run ending on the regular days off")
     days = [MONDAY + timedelta(days=i) for i in range(7)]
     dts = [day_type(d) for d in days]
     # off_pair_start=3 -> mandatory rest on Thursday + Friday
     r = Resource(id="rp", name="Anchor person", weight=2, off_pair_start=3)
 
-    def run(seq, res=r):
+    def run(seq, res=r, tail=None, relax=0):
         assign = {res.id: seq}
-        v = verify(assign, [res], days, dts, day0={res.id: OFF}, relax_level=0)
+        tail = tail or {}
+        v = verify(assign, [res], days, dts, day0={res.id: OFF},
+                   relax_level=relax, prev_tail=tail)
         flags = [x for x in v if x["code"] == "COMP3_NO_EXTRA_REST"]
-        st = compute_stats(assign, [res], days, dts)["resources"][0]
-        return flags, st
+        rets = [x for x in v if x["code"] == "RETURN_ORDER"]
+        st = compute_stats(assign, [res], days, dts,
+                           prev_tail=tail)["resources"][0]
+        return flags, st, rets
 
-    flags, st = run(["S3", "S3", "S3", OFF, OFF, "S1", "S2"])
+    flags, st, rets = run(["S3", "S3", "S3", OFF, OFF, "S1", "S2"])
     check("3-night run on the anchor pair without an extra day is flagged",
           len(flags) == 1, f"{len(flags)} flag(s)")
+    check("... as an error below the last relaxation level",
+          flags and flags[0]["severity"] == "error",
+          flags[0]["severity"] if flags else "")
     check("... and no comp day is credited", st["comp_count"] == 0, str(st["comp_count"]))
 
-    flags, st = run(["S3", "S3", "S3", OFF, OFF, OFF, "S1"])
+    flags, st, rets = run(["S3", "S3", "S3", OFF, OFF, OFF, "S1"])
     check("the extra rest day after the pair silences the flag", not flags, str(flags))
     check("... and is credited as a comp day", st["comp_count"] == 1,
           str(st["comp_count"]))
 
+    # bent only at the last relaxation level -> loud warning, not a hard error
+    flags, st, rets = run(["S3", "S3", "S3", OFF, OFF, "S1", "S2"], relax=6)
+    check("the same gap bends with a warning at the last level",
+          flags and flags[0]["severity"] == "warning",
+          flags[0]["severity"] if flags else "no flag")
+
     # classic case: anchor Sat+Sun, 3 nights Mon-Wed, recovery Thursday (weekday)
     rc = Resource(id="rc", name="Classic", weight=2, off_pair_start=5)
-    flags, st = run(["S3", "S3", "S3", OFF, "S1", "S2", OFF], rc)
+    flags, st, rets = run(["S3", "S3", "S3", OFF, "S1", "S2", OFF], rc)
     check("classic non-anchor comp still credited", st["comp_count"] == 1,
           str(st["comp_count"]))
     check("classic non-anchor comp raises no flag", not flags, str(flags))
 
     # 2-night runs keep today's soft "when coverage allows" wording
-    flags, st = run([OFF, "S3", "S3", OFF, OFF, "S1", "S2"])
+    flags, st, rets = run([OFF, "S3", "S3", OFF, OFF, "S1", "S2"])
     check("2-night run on the anchor pair raises no flag", not flags, str(flags))
+
+    # --- cross-seam: run + anchor recovery at the end of the previous cycle,
+    # extra day pinned into THIS cycle's day 1 (Sat+Sun pair, day -1 = Sunday)
+    tail = {"rc": [OFF, "S3", "S3", "S3", "S3", OFF]}
+    flags, st, rets = run(["S1", "S2", OFF, "S1", "S2", OFF, OFF],
+                          rc, tail=tail)
+    check("extra day pinned from the previous cycle must be Off",
+          len(flags) == 1, f"{len(flags)} flag(s)")
+    check("... the gap day is the flagged one", flags and flags[0]["day"] == 0,
+          str(flags))
+    check("... no comp day credited while the gap is worked",
+          st["comp_count"] == 0, str(st["comp_count"]))
+
+    flags, st, rets = run([OFF, "S2", OFF, "S1", "S2", OFF, OFF],
+                          rc, tail=tail)
+    check("the pinned extra day Off silences the cross-seam flag",
+          not flags, str(flags))
+    check("... and is credited as a comp day in this cycle",
+          st["comp_count"] == 1, str(st["comp_count"]))
+
+    # --- post-night return order: S2 > S1 > S4, S3 never
+    print("Return policy - first workday after night recovery")
+    flags, st, rets = run(["S3", OFF, "S4", OFF, OFF, "S1", "S2"])
+    check("S4 return after a night + Off is flagged",
+          len(rets) == 1, f"{len(rets)} flag(s)")
+    check("... as an error below the last relaxation level",
+          rets and rets[0]["severity"] == "error",
+          rets[0]["severity"] if rets else "")
+    check("... on the return day", rets and rets[0]["day"] == 2,
+          str(rets))
+
+    flags, st, rets = run(["S3", OFF, "S4", OFF, OFF, "S1", "S2"], relax=6)
+    check("an S4 return bends with a loud warning at the last level",
+          rets and rets[0]["severity"] == "warning",
+          rets[0]["severity"] if rets else "no flag")
+
+    flags, st, rets = run(["S3", OFF, "S3", OFF, OFF, "S1", "S2"])
+    check("straight back to nights (S3 return) is flagged",
+          len(rets) == 1, f"{len(rets)} flag(s)")
+
+    flags, st, rets = run(["S3", OFF, "S1", OFF, OFF, "S1", "S2"])
+    check("S1 return is allowed (second choice in the order)", not rets,
+          str(rets))
+
+    flags, st, rets = run(["S3", OFF, "S2", OFF, OFF, "S1", "S2"])
+    check("S2 return is the preferred choice", not rets, str(rets))
+
+    # the scan walks the WHOLE Off recovery run, not just a single Off day
+    flags, st, rets = run(["S3", OFF, OFF, "S4", OFF, "S1", "S2"])
+    check("return after a 2-day recovery run is caught too",
+          len(rets) == 1, f"{len(rets)} flag(s)")
 
 
 def main():

@@ -1,12 +1,27 @@
 {
  "ok": true,
  "op": "generate",
- "jid": "mvqa63j4gsc66g",
+ "jid": "mvqjmrclfzciui",
  "version": {
-  "id": "v_0e1f4e10a5",
+  "id": "v_a2f50ec0a5",
   "label": "Full generation"
  },
- "warnings": [],
+ "warnings": [
+  {
+   "code": "COMP3_NO_EXTRA_REST",
+   "severity": "warning",
+   "day": 8,
+   "resource_id": "07698ddb",
+   "message": "3-night run ends on the regular days off, but Mon is a S1 day — no extra rest day after the pair"
+  },
+  {
+   "code": "COMP3_NO_EXTRA_REST",
+   "severity": "warning",
+   "day": 17,
+   "resource_id": "d4e85186",
+   "message": "3-night run ends on the regular days off, but Wed is a S3 day — no extra rest day after the pair"
+  }
+ ],
  "info": [
   {
    "code": "EXTRA_MORNING",
@@ -22,7 +37,7 @@
   }
  ],
  "relaxations": [],
- "previous_version_id": "v_1d9ada2846",
+ "previous_version_id": "v_0e1f4e10a5",
  "label": "Full generation",
- "at": "2026-10-27T06:07:46+00:00"
+ "at": "2026-10-27T10:33:22+00:00"
 }

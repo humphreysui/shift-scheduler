@@ -1,12 +1,28 @@
 {
  "ok": true,
- "op": "restore",
- "jid": "e2e-restore-1",
+ "op": "generate",
+ "jid": "mvqa63j4gsc66g",
  "version": {
-  "id": "v_1d9ada2846",
+  "id": "v_0e1f4e10a5",
   "label": "Full generation"
  },
+ "warnings": [],
+ "info": [
+  {
+   "code": "EXTRA_MORNING",
+   "severity": "info",
+   "day": 19,
+   "message": "4th morning person added to lift the morning weight — review if not needed"
+  },
+  {
+   "code": "EXTRA_MORNING",
+   "severity": "info",
+   "day": 26,
+   "message": "4th morning person added to lift the morning weight — review if not needed"
+  }
+ ],
+ "relaxations": [],
  "previous_version_id": "v_1d9ada2846",
  "label": "Full generation",
- "at": "2026-10-26T11:09:30+00:00"
+ "at": "2026-10-27T06:07:46+00:00"
 }

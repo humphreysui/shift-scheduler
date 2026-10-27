@@ -57,8 +57,22 @@
    "active": true
   }
  ],
- "day0_overrides": {},
- "day1_overrides": {},
+ "day0_overrides": {
+  "de6c4848": "Off",
+  "3af12d62": "Off",
+  "5c7d9929": "S4",
+  "1cedc693": "Off",
+  "1d480a8e": "S3",
+  "07698ddb": "Off",
+  "d4e85186": "S2"
+ },
+ "day1_overrides": {
+  "de6c4848": "Off",
+  "3af12d62": "Off",
+  "1d480a8e": "S3",
+  "07698ddb": "Off",
+  "d4e85186": "S2"
+ },
  "current_version_id": "v_1d9ada2846",
  "cycle_current": {
   "2026-10-19": "v_9922de1954",

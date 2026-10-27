@@ -281,14 +281,14 @@ function renderSchedule() {
     const cls = isW ? (m.weight >= 7 ? "ok" : "bad") : "na";
     const pct = isW ? Math.min(100, Math.round((m.weight / 9) * 100)) : 0;
     const extra = infoDays.has(d) ? `<span class="tagx" title="4th morning person added">+1</span>` : "";
-    html += `<td class="${cls}${extraOf(dm)}" title="${esc(m.date)} — morning skill weight ${isW ? m.weight : "n/a"} (floor 7)">` +
+    html += `<td class="${cls}${extraOf(dm)}" title="${esc(m.date)} — morning availability weight ${isW ? m.weight : "n/a"} (floor 7)">` +
       `<span class="n">${isW ? m.weight : "–"}</span><span class="bar"><i style="width:${pct}%"></i></span>${extra}</td>`;
   }
   html += `</tr></thead><tbody>`;
   for (const r of S.resources) {
     if (!r.active) continue;
     const seq = cur.assign[r.id];
-    html += `<tr><td class="name"><span class="nm">${esc(r.name)}</span><span class="sub">weight ${r.weight} · off ${offPairLabel(r.off_pair_start)}</span></td>`;
+    html += `<tr><td class="name"><span class="nm">${esc(r.name)}</span><span class="sub">availability ${r.weight} · off ${offPairLabel(r.off_pair_start)}</span></td>`;
     for (let d = 0; d < 28; d++) {
       const v = seq ? seq[d] : "";
       const dm = meta[d];
@@ -413,7 +413,7 @@ function renderDayBody() {
   html += `<div class="card morning"><h3><span>Morning <span class="tm">08:00–17:00</span></span>
     <span class="pill ${isWork ? (morningWeight >= 7 ? "ok" : "bad") : "na"}">weight ${morningWeight}${isWork ? " / 9" : ""}</span></h3>`;
   for (const r of morningCrew)
-    html += `<div class="who"><span>${esc(r.name)} <span class="muted">skill ${r.weight}</span></span>
+    html += `<div class="who"><span>${esc(r.name)} <span class="muted">availability ${r.weight}</span></span>
       <span class="chip ${cur.assign[r.id][d].toLowerCase()}">${cur.assign[r.id][d]}</span></div>`;
   if (!morningCrew.length) html += `<div class="empty">nobody</div>`;
   html += `</div>`;
@@ -478,7 +478,7 @@ function renderPeople() {
       ? `cumulative · ${cyc} cycle${cyc === 1 ? "" : "s"}: nights ${debt.tot_night} · S2 ${debt.tot_eve} · S4 ${debt.tot_s4} · comps ${debt.tot_comp} · off ${debt.tot_off}`
       : "";
     html += `<div class="card">
-      <h3><span>${esc(st.name)}</span> <span class="muted">skill ${st.weight} · off ${esc(st.off_pair)}</span></h3>
+      <h3><span>${esc(st.name)}</span> <span class="muted">availability ${st.weight} · off ${esc(st.off_pair)}</span></h3>
       <div class="strip">${strip}</div>
       <div class="counts">
         <span class="cnt s1"><span class="l">S1</span><span class="v">${st.counts.S1}</span></span>
@@ -529,7 +529,7 @@ function renderSetup() {
   const act = S.resources.filter(r => r.active).length;
   $("#res-count").textContent = `— ${act} active / ${S.resources.length} total (7–9 supported)`;
   const host = $("#resources-editor");
-  host.innerHTML = `<table class="simple"><thead><tr><th>Name</th><th>Skill 1–3</th>
+  host.innerHTML = `<table class="simple"><thead><tr><th>Name</th><th>Availability 1–3</th>
     <th>Rest days (2 in a row)</th><th>Active</th><th></th></tr></thead>
     <tbody>${S.resources.map(resourceRow).join("")}</tbody></table>`;
   $$("#resources-editor tbody tr", host).forEach(wireRow);

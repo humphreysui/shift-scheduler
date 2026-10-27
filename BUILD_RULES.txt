@@ -10,7 +10,7 @@ A. MODEL / INPUTS
 - Cycle: 28 days (4 x 7), default start = Monday.
 - Staff: 7-9 active. Hard minimum 7 (comment in models.py: 6 people x 5 days
   = 30 < 31 person-days needed per week).
-- Each person: skill weight 1..3 (3 = highest), and a FIXED off-pair =
+- Each person: availability weight 1..3 (3 = highest), and a FIXED off-pair =
   two consecutive weekday indices (start, start+1 mod 7) = mandatory rest
   days (anchors), e.g. Sat+Sun.
 - Per person-day values (exactly one): Off, S1 (office 08:00-17:00),
@@ -52,7 +52,7 @@ H12 Repair freeze: all days BEFORE the edited day hard-frozen to the
     current schedule; the edited cell itself forced to the chosen value.
                                                                         [never]
 H13 Morning WEIGHT floor (separate from H2's count): sum of morning-crew
-    skill weights on a workday should be >= 7 (target 9). Implemented as
+    availability weights on a workday should be >= 7 (target 9). Implemented as
     a soft big-M indicator (M_BELOW = 12) costing 1,000,000 per below-floor
     workday — near-hard in practice, reported as a warning flag.
 

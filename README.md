@@ -1,7 +1,7 @@
 # Shift Scheduler
 
 A local, single-user web app that generates and maintains a rolling **4-week shift
-schedule** for **7–9 resources**, honoring skill weights, 24/7 coverage, rest rules,
+schedule** for **7–9 resources**, honoring availability weights, 24/7 coverage, rest rules,
 off-day stability across cycles, night-shift fairness, and a safe manual-edit /
 sick-leave "repair" workflow with version backups.
 
@@ -36,11 +36,11 @@ python tests.py
 | S1 Office day | 08:00–17:00 | ≥2 per workday (part of the morning crew) |
 | S2 Evening | 14:00–23:00 | ≥1 per day |
 | S3 Night | 23:00–08:00 (+1) | ≥1 per day; after a night only Off or another S3 |
-| S4 Support | 07:00–16:00 | staffed every day (early handover so S3 can rest); max 1/day; prefers lower skill weights, kept equal over time |
+| S4 Support | 07:00–16:00 | staffed every day (early handover so S3 can rest); max 1/day; prefers lower availability weights, kept equal over time |
 
 ## Core rules (as configured)
 
-- **Weekdays**: morning crew (S1+S4) ≥ 3 people, morning skill-weight target 9, floor 7
+- **Weekdays**: morning crew (S1+S4) ≥ 3 people, morning availability-weight target 9, floor 7
   (below 7 is best-effort + flagged; a 4th morning person may be added when labor allows).
 - **Weekends & holidays**: light coverage — 1 morning + 1 evening + 1 night minimum.
 - Every resource: two consecutive mandatory rest days per week (editable pair),
@@ -57,7 +57,7 @@ python tests.py
   run is strongly preferred). Comp days are counted per person, shown as **C** in the
   grid, and equalized across cycles with their own debt ledger entry.
 - **Support shift (S4)**: staffed every day (07:00 handover takes over so the night
-  person can leave on time), tilted toward lower skill weights, spread equally across
+  person can leave on time), tilted toward lower availability weights, spread equally across
   the team and tracked in the debt ledger.
 - Night fairness: night counts equalized per cycle; the app tracks a **debt ledger**
   so a surplus in one cycle is corrected in the next.

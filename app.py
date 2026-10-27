@@ -172,7 +172,7 @@ def set_resources(payload: dict = Body(default={})):
         except (TypeError, ValueError):
             raise HTTPException(400, f"Invalid weight for {name}.")
         if weight not in (1, 2, 3):
-            raise HTTPException(400, f"{name}: skill weight must be 1, 2 or 3.")
+            raise HTTPException(400, f"{name}: availability weight must be 1, 2 or 3.")
         try:
             ostart = int(it.get("off_pair_start", 0)) % 7
         except (TypeError, ValueError):

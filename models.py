@@ -39,7 +39,7 @@ COMP_AFTER = 2     # comp day after a run of >= 2 nights (when coverage allows)
 class Resource:
     id: str
     name: str
-    weight: int = 2          # 1..3 (3 = highest skill)
+    weight: int = 2          # 1..3 (3 = highest availability weight)
     off_pair_start: int = 0  # 0=Mon .. 6=Sun -> off days are start and start+1
     active: bool = True
 
